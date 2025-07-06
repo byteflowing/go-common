@@ -178,13 +178,14 @@ type PostgresConfig struct {
 	Password string // 数据库密码
 	DBName   string // 数据库名
 	SSLMode  bool   // 是否使用ssl
-	Port     int    `default:"5432"`          // 端口号
-	TimeZone string `default:"Asia/Shanghai"` // 时区
+	Port     int    // 端口号
+	TimeZone string // 时区
+	Schema   string // schema
 }
 
 func (p *PostgresConfig) GetDSN() string {
 	escapedLoc := url.QueryEscape(p.TimeZone)
-	const format = "host=%s, user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s"
+	const format = "host=%s, user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s search_path=%s"
 	return fmt.Sprintf(
 		format,
 		p.Host,
@@ -194,6 +195,7 @@ func (p *PostgresConfig) GetDSN() string {
 		p.Port,
 		p.getSSLMode(),
 		escapedLoc,
+		p.Schema,
 	)
 }
 
