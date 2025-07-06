@@ -184,7 +184,6 @@ type PostgresConfig struct {
 }
 
 func (p *PostgresConfig) GetDSN() string {
-	escapedLoc := url.QueryEscape(p.TimeZone)
 	const format = "host=%s, user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s search_path=%s"
 	return fmt.Sprintf(
 		format,
@@ -194,7 +193,7 @@ func (p *PostgresConfig) GetDSN() string {
 		p.DBName,
 		p.Port,
 		p.getSSLMode(),
-		escapedLoc,
+		p.TimeZone,
 		p.Schema,
 	)
 }
