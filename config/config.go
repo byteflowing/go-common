@@ -1,12 +1,10 @@
 package config
 
 import (
-	"bytes"
 	"fmt"
-	"os"
-	"path"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -27,36 +25,18 @@ const (
 //
 // 如果 IntDefault，StringDefault在配置文件中没有提供，则会使用1和string_default
 func ReadConfig(file string, config interface{}) (err error) {
-	ext := getConfigType(path.Ext(file))
-	viper.SetConfigType(ext)
-	content, err := os.ReadFile(file)
-	if err != nil {
-		return err
+	v := viper.New()
+	v.SetConfigFile(file)
+	v.AutomaticEnv()
+	v.AllowEmptyEnv(true)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	if err := v.ReadInConfig(); err != nil {
+		panic(err)
 	}
-	// 替换环境变量
-	configRaw := []byte(os.ExpandEnv(string(content)))
-	if err = viper.ReadConfig(bytes.NewBuffer(configRaw)); err != nil {
-		return
-	}
-	if err := viper.Unmarshal(config); err != nil {
-		return err
+	if err := v.Unmarshal(config); err != nil {
+		panic(err)
 	}
 	return parseDefaultTag(config)
-}
-
-func getConfigType(ext string) string {
-	switch ext {
-	case ".yml", ".yaml":
-		return "yaml"
-	case ".json":
-		return "json"
-	case ".ini":
-		return "ini"
-	case ".toml":
-		return "toml"
-	default:
-		panic("unknown file type")
-	}
 }
 
 func parseDefaultTag(config interface{}) error {
