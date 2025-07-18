@@ -66,3 +66,50 @@ func (s *Sms) SendSms(req *SendSmsReq) (resp *SendSmsResp, err error) {
 		}}
 	return
 }
+
+func (s *Sms) QuerySendDetail(req *QuerySendDetailReq) (resp *QuerySendDetailResp, err error) {
+	result, err := s.cli.QuerySendDetails(&smsCli.QuerySendDetailsRequest{
+		BizId:       tea.String(req.BizId),
+		CurrentPage: tea.Int64(1),
+		PageSize:    tea.Int64(1),
+		PhoneNumber: tea.String(req.Phone),
+		SendDate:    tea.String(req.Data),
+	})
+	if err != nil {
+		return nil, err
+	}
+	resp = &QuerySendDetailResp{
+		Common: &CommonResp{
+			Code:      tea.StringValue(result.Body.Code),
+			Message:   tea.StringValue(result.Body.Message),
+			RequestId: tea.StringValue(result.Body.RequestId),
+		},
+	}
+	if result.Body.SmsSendDetailDTOs != nil && len(result.Body.SmsSendDetailDTOs.SmsSendDetailDTO) > 0 {
+		v := result.Body.SmsSendDetailDTOs.SmsSendDetailDTO[0]
+		resp.ErrCode = tea.StringValue(v.ErrCode)
+		resp.TemplateCode = tea.StringValue(v.TemplateCode)
+		resp.ReceiveDate = tea.StringValue(v.ReceiveDate)
+		resp.SendDate = tea.StringValue(v.SendDate)
+		resp.Phone = tea.StringValue(v.PhoneNum)
+		resp.Content = tea.StringValue(v.PhoneNum)
+		resp.Status = s.parseStatus(v.SendStatus)
+	}
+	return
+}
+
+func (s *Sms) parseStatus(status *int64) SendStatus {
+	v := tea.Int64Value(status)
+	var st SendStatus
+	switch v {
+	case 1:
+		st = SendStatusWait
+	case 2:
+		st = SendStatusFailed
+	case 3:
+		st = SendStatusSuccess
+	default:
+		st = SendStatusFailed
+	}
+	return st
+}
