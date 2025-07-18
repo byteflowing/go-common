@@ -34,11 +34,11 @@ type QuerySendDetailReq struct {
 
 type QuerySendDetailResp struct {
 	Common       *CommonResp
-	ErrCode      string
-	TemplateCode string
-	ReceiveDate  string
-	SendDate     string
-	Phone        string
-	Content      string
+	ErrCode      *string
+	TemplateCode *string
+	ReceiveDate  *string
+	SendDate     *string
+	Phone        *string
+	Content      *string
 	Status       SendStatus
 }

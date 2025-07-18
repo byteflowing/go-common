@@ -87,12 +87,12 @@ func (s *Sms) QuerySendDetail(req *QuerySendDetailReq) (resp *QuerySendDetailRes
 	}
 	if result.Body.SmsSendDetailDTOs != nil && len(result.Body.SmsSendDetailDTOs.SmsSendDetailDTO) > 0 {
 		v := result.Body.SmsSendDetailDTOs.SmsSendDetailDTO[0]
-		resp.ErrCode = tea.StringValue(v.ErrCode)
-		resp.TemplateCode = tea.StringValue(v.TemplateCode)
-		resp.ReceiveDate = tea.StringValue(v.ReceiveDate)
-		resp.SendDate = tea.StringValue(v.SendDate)
-		resp.Phone = tea.StringValue(v.PhoneNum)
-		resp.Content = tea.StringValue(v.PhoneNum)
+		resp.ErrCode = v.ErrCode
+		resp.TemplateCode = v.TemplateCode
+		resp.ReceiveDate = v.ReceiveDate
+		resp.SendDate = v.SendDate
+		resp.Phone = v.PhoneNum
+		resp.Content = v.PhoneNum
 		resp.Status = s.parseStatus(v.SendStatus)
 	}
 	return
