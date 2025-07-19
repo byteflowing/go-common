@@ -5,48 +5,45 @@ import (
 	"github.com/bytedance/gopkg/lang/stringx"
 )
 
-type CaptchaType string
+type CaptchaType uint8
 
 const (
-	CaptchaNumber                CaptchaType = "number" // 存数字
-	CaptchaLetter                CaptchaType = "letter" //
-	CaptchaNumberLetter          CaptchaType = "number_letter"
-	CaptchaLetterUppercase       CaptchaType = "letter_uppercase"
-	CaptchaLetterLowercase       CaptchaType = "letter_lowercase"
-	CaptchaNumberLetterUppercase CaptchaType = "number_letter_uppercase"
-	CaptchaNumberLetterLowercase CaptchaType = "number_letter_lowercase"
+	CaptchaNumber CaptchaType = 1 << iota // 存数字
+	CaptchaUppercase
+	CaptchaLowercase
+	CaptchaSymbol
 )
 
 var (
-	numberCharset          = "0123456789"
-	letterLowercaseCharset = "abcdefghijklmnopqrstuvwxyz"
-	letterUppercaseCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	numberCharset = "0123456789"
+	lowerCharset  = "abcdefghijklmnopqrstuvwxyz"
+	upperCharset  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	symbolCharset = "!@#$%&*"
 )
 
 func GenerateCaptcha(length int, captchaType CaptchaType) string {
 	var charset string
-	switch captchaType {
-	case CaptchaNumber:
-		charset = numberCharset
-	case CaptchaLetter:
-		charset = letterUppercaseCharset + letterLowercaseCharset
-	case CaptchaNumberLetter:
-		charset = numberCharset + letterLowercaseCharset + letterUppercaseCharset
-	case CaptchaLetterUppercase:
-		charset = letterUppercaseCharset
-	case CaptchaLetterLowercase:
-		charset = letterLowercaseCharset
-	case CaptchaNumberLetterUppercase:
-		charset = numberCharset + letterUppercaseCharset
-	case CaptchaNumberLetterLowercase:
-		charset = numberCharset + letterLowercaseCharset
-	default:
+	if captchaType&CaptchaNumber != 0 {
+		charset += numberCharset
+	}
+	if captchaType&CaptchaUppercase != 0 {
+		charset += upperCharset
+	}
+	if captchaType&CaptchaLowercase != 0 {
+		charset += lowerCharset
+	}
+	if captchaType&CaptchaSymbol != 0 {
+		charset += symbolCharset
+	}
+	if charset == "" {
 		charset = numberCharset
 	}
+
 	charset = stringx.Shuffle(charset)
-	captcha := make([]byte, length)
-	for i := range captcha {
-		captcha[i] = charset[fastrand.Intn(len(charset))]
+
+	code := make([]byte, length)
+	for i := range code {
+		code[i] = charset[fastrand.Intn(len(charset))]
 	}
-	return string(captcha)
+	return string(code)
 }
