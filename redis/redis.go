@@ -17,34 +17,6 @@ const (
 	defaultWaitDuration = 5 * time.Millisecond
 )
 
-const unLockLua = `
-	if
-		redis.call("GET", KEYS[1]) == ARGV[1]
-	then
-		return redis.call("DEL", KEYS[1])
-	else
-		return 0
-	end
-`
-
-const renewLockLua = `
-		if
-			redis.call("GET", KEYS[1]) == ARGV[1]
-		then
-			return redis.call("PEXPIRE", KEYS[1], ARGV[2])
-		else
-			return 0
-		end
-`
-
-const incrWithExpireLua = `
-	local current = redis.call("INCR", KEYS[1])
-	if current == 1 then
-		redis.call("EXPIRE", KEYS[1], ARGV[1])
-	end
-	return current
-`
-
 type Options struct {
 	LockKeyPrefix    string
 	LockTryTimes     int
@@ -127,6 +99,7 @@ func (r *Redis) RenewLock(ctx context.Context, key, identifier string, expiratio
 	return fmt.Errorf("renew failed: key %s is no longer valid or mismatched identifier", key)
 }
 
+// IncrWithExpire IncrWithExpire: 如果是第一次，则会添加过期时间
 func (r *Redis) IncrWithExpire(ctx context.Context, key string, expiration time.Duration) (int64, error) {
 	cmd := redis.NewScript(incrWithExpireLua)
 	result, err := cmd.Run(ctx, r, []string{key}, strconv.FormatInt(expiration.Milliseconds(), 10)).Int64()
