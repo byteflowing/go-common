@@ -3,11 +3,22 @@ package redis
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/redis/go-redis/v9"
 )
+
+var scriptOnce sync.Once
+var script *redis.Script
+
+func getSlidingWindowScript() *redis.Script {
+	scriptOnce.Do(func() {
+		script = redis.NewScript(slidingWindowLua)
+	})
+	return script
+}
 
 type Window struct {
 	Duration time.Duration // 限制周期
@@ -36,7 +47,7 @@ func NewLimiter(rdb *Redis, prefix string, windows []*Window) *Limiter {
 		prefix:  prefix,
 		windows: windows,
 		ttl:     longest,
-		script:  redis.NewScript(slidingWindowLua),
+		script:  getSlidingWindowScript(),
 	}
 }
 
