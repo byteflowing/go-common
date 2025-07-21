@@ -69,7 +69,7 @@ const slidingWindowLua = `
 	return 1
 `
 
-const fixedWindowLimitLua = `
+const allowFixedLimitLua = `
 	-- KEYS[1] = 限流 key（如 user:123:api:send_code）
 	-- ARGV[1] = 限流周期（秒）
 	-- ARGV[2] = 限流次数上限

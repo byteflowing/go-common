@@ -3,20 +3,20 @@ package redis
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/bytedance/gopkg/lang/fastrand"
+	"github.com/byteflowing/go-common/syncx"
 	"github.com/redis/go-redis/v9"
 )
 
-var scriptOnce sync.Once
 var script *redis.Script
+var initScript = syncx.Once(func() {
+	script = redis.NewScript(slidingWindowLua)
+})
 
 func getSlidingWindowScript() *redis.Script {
-	scriptOnce.Do(func() {
-		script = redis.NewScript(slidingWindowLua)
-	})
+	initScript()
 	return script
 }
 
