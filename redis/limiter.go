@@ -23,6 +23,7 @@ func getSlidingWindowScript() *redis.Script {
 type Window struct {
 	Duration time.Duration // 限制周期
 	Limit    uint32        // 最大次数
+	Scene    *string       // 场景扩展
 }
 
 type Limiter struct {
@@ -73,10 +74,7 @@ func (l *Limiter) Allow(ctx context.Context, key string) (bool, *Window, error) 
 	// 被限流返回对应窗口
 	if num >= 100 {
 		index := int(num - 100)
-		if index >= 0 && index < len(l.windows) {
-			return false, l.windows[index], nil
-		}
-		return false, nil, fmt.Errorf("invalid window index returned from Lua: %d", index)
+		return false, l.windows[index], nil
 	}
 	return false, nil, fmt.Errorf("unexpected return value: %d", num)
 }
