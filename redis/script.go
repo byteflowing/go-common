@@ -14,7 +14,7 @@ const renewLockLua = `
 		if
 			redis.call("GET", KEYS[1]) == ARGV[1]
 		then
-			return redis.call("PEXPIRE", KEYS[1], ARGV[2])
+			return redis.call("PEXPIRE", KEYS[1], tonumber(ARGV[2]))
 		else
 			return 0
 		end
@@ -23,7 +23,7 @@ const renewLockLua = `
 const incrWithExpireLua = `
 	local current = redis.call("INCR", KEYS[1])
 	if current == 1 then
-		redis.call("EXPIRE", KEYS[1], ARGV[1])
+		redis.call("PEXPIRE", KEYS[1], tonumber(ARGV[1]))
 	end
 	return current
 `
@@ -66,5 +66,21 @@ const slidingWindowLua = `
 	redis.call("ZADD", KEYS[1], now, id)
 	-- 每次请求重置TTL
 	redis.call("EXPIRE", KEYS[1], ttl)
+	return 1
+`
+
+const fixedWindowLimitLua = `
+	-- KEYS[1] = 限流 key（如 user:123:api:send_code）
+	-- ARGV[1] = 限流周期（秒）
+	-- ARGV[2] = 限流次数上限
+	local ttl = tonumber(ARGV[1])
+	local limit = tonumber(ARGV[2])
+	local current = redis.call("INCR", KEYS[1])
+	if current == 1 then
+		redis.call("PEXPIRE", KEYS[1], ttl)
+	end
+	if current > limit then
+		return 0
+	end
 	return 1
 `

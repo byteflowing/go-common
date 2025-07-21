@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/byteflowing/go-common/idx"
@@ -27,6 +27,14 @@ type Option func(o *Options)
 
 type Redis struct {
 	redis.Cmdable
+	_unLockOnce             sync.Once
+	_renewLockOnce          sync.Once
+	_allowFixedLimitOnce    sync.Once
+	_incrWithExpireLockOnce sync.Once
+	_unLockScript           *redis.Script
+	_renewLockScript        *redis.Script
+	_allowFixedLimitScript  *redis.Script
+	_incrWithExpireScript   *redis.Script
 }
 
 func New(c *Config) *Redis {
@@ -46,7 +54,7 @@ func New(c *Config) *Redis {
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		panic("connecting to redis failed:" + err.Error())
 	}
-	return &Redis{rdb}
+	return &Redis{Cmdable: rdb}
 }
 
 func (r *Redis) Lock(ctx context.Context, key string, expiration time.Duration, options ...Option) (identifier string, err error) {
@@ -72,10 +80,10 @@ func (r *Redis) Lock(ctx context.Context, key string, expiration time.Duration, 
 }
 
 func (r *Redis) Unlock(ctx context.Context, key, identifier string, options ...Option) (err error) {
+	r._unLockOnce.Do(r.initUnLockScript)
 	prefix, _, _ := parseLockOptions(options)
 	key = fmt.Sprintf("%s:%s", prefix, key)
-	var command = redis.NewScript(unLockLua)
-	result, err := command.Run(ctx, r, []string{key}, []string{identifier}).Int()
+	result, err := r._unLockScript.Run(ctx, r, []string{key}, []string{identifier}).Int()
 	if err != nil {
 		return err
 	}
@@ -86,10 +94,10 @@ func (r *Redis) Unlock(ctx context.Context, key, identifier string, options ...O
 }
 
 func (r *Redis) RenewLock(ctx context.Context, key, identifier string, expiration time.Duration, options ...Option) (err error) {
+	r._renewLockOnce.Do(r.initRenewLockScript)
 	prefix, _, _ := parseLockOptions(options)
 	key = fmt.Sprintf("%s:%s", prefix, key)
-	command := redis.NewScript(renewLockLua)
-	result, err := command.Run(ctx, r, []string{key}, identifier, strconv.FormatInt(expiration.Milliseconds(), 10)).Int()
+	result, err := r._renewLockScript.Run(ctx, r, []string{key}, identifier, expiration.Milliseconds()).Int()
 	if err != nil {
 		return err
 	}
@@ -101,12 +109,21 @@ func (r *Redis) RenewLock(ctx context.Context, key, identifier string, expiratio
 
 // IncrWithExpire IncrWithExpire: 如果是第一次，则会添加过期时间
 func (r *Redis) IncrWithExpire(ctx context.Context, key string, expiration time.Duration) (int64, error) {
-	cmd := redis.NewScript(incrWithExpireLua)
-	result, err := cmd.Run(ctx, r, []string{key}, strconv.FormatInt(expiration.Milliseconds(), 10)).Int64()
+	r._incrWithExpireLockOnce.Do(r.initIncrWithExpireScript)
+	result, err := r._incrWithExpireScript.Run(ctx, r, []string{key}, expiration.Milliseconds()).Int64()
 	if err != nil {
 		return 0, err
 	}
 	return result, nil
+}
+
+func (r *Redis) AllowFixedLimit(ctx context.Context, key string, expiration time.Duration, maxCount uint32) (bool, error) {
+	r._allowFixedLimitOnce.Do(r.initAllowFixedLimitScript)
+	result, err := r._allowFixedLimitScript.Run(ctx, r, []string{key}, expiration.Milliseconds(), maxCount).Int64()
+	if err != nil {
+		return false, err
+	}
+	return result == 1, nil
 }
 
 // WithLockKeyPrefix : 设置key前缀
@@ -151,4 +168,20 @@ func parseLockOptions(options []Option) (prefix string, waitDuration time.Durati
 		prefix = ops.LockKeyPrefix
 	}
 	return
+}
+
+func (r *Redis) initUnLockScript() {
+	r._unLockScript = redis.NewScript(unLockLua)
+}
+
+func (r *Redis) initRenewLockScript() {
+	r._renewLockScript = redis.NewScript(renewLockLua)
+}
+
+func (r *Redis) initIncrWithExpireScript() {
+	r._incrWithExpireScript = redis.NewScript(incrWithExpireLua)
+}
+
+func (r *Redis) initAllowFixedLimitScript() {
+	r._allowFixedLimitScript = redis.NewScript(fixedWindowLimitLua)
 }
