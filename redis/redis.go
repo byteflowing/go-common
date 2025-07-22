@@ -12,6 +12,10 @@ import (
 )
 
 const (
+	Nil = redis.Nil
+)
+
+const (
 	defaultKeyPrefix    = "lock"
 	defaultTries        = 5
 	defaultWaitDuration = 5 * time.Millisecond
