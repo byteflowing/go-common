@@ -84,3 +84,18 @@ const allowFixedLimitLua = `
 	end
 	return 1
 `
+
+const allowDailyLimitLua = `
+	-- KEYS[1]: 限流 key，比如 limit:api:xxx:20250721
+	-- ARGV[1]: 今日剩余毫秒数
+	-- ARGV[2]: 限流最大次数
+	
+	local current = redis.call("INCR", KEYS[1])
+	if current == 1 then
+		redis.call("PEXPIRE", KEYS[1], tonumber(ARGV[1]))
+	end
+	if current > tonumber(ARGV[2]) then
+		return 0
+	end
+	return 1
+`

@@ -8,6 +8,7 @@ import (
 
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
+	"github.com/byteflowing/go-common/utils"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -35,10 +36,12 @@ type Redis struct {
 	initRenewLockScript       func()
 	initAllowFixedLimitScript func()
 	initIncrWithExpireScript  func()
+	initDailyLimitScript      func()
 	unLockScript              *redis.Script
 	renewLockScript           *redis.Script
 	allowFixedLimitScript     *redis.Script
 	incrWithExpireScript      *redis.Script
+	dailyLimitScript          *redis.Script
 }
 
 func New(c *Config) *Redis {
@@ -63,6 +66,7 @@ func New(c *Config) *Redis {
 	r.initRenewLockScript = syncx.Once(func() { r.renewLockScript = redis.NewScript(renewLockLua) })
 	r.initIncrWithExpireScript = syncx.Once(func() { r.incrWithExpireScript = redis.NewScript(incrWithExpireLua) })
 	r.initAllowFixedLimitScript = syncx.Once(func() { r.allowFixedLimitScript = redis.NewScript(allowFixedLimitLua) })
+	r.initDailyLimitScript = syncx.Once(func() { r.dailyLimitScript = redis.NewScript(allowDailyLimitLua) })
 	return r
 }
 
@@ -126,9 +130,24 @@ func (r *Redis) IncrWithExpire(ctx context.Context, key string, expiration time.
 	return result, nil
 }
 
+// AllowFixedLimit 用于duration时间内的限流次数
 func (r *Redis) AllowFixedLimit(ctx context.Context, key string, expiration time.Duration, maxCount uint32) (bool, error) {
 	r.initAllowFixedLimitScript()
 	result, err := r.allowFixedLimitScript.Run(ctx, r, []string{key}, expiration.Milliseconds(), maxCount).Int64()
+	if err != nil {
+		return false, err
+	}
+	return result == 1, nil
+}
+
+// AllowDailyLimit 用于当天的限流次数
+// 常用于按自然天算api请求次数场景
+func (r *Redis) AllowDailyLimit(ctx context.Context, keyPrefix string, maxCount uint32) (bool, error) {
+	r.initDailyLimitScript()
+	ttl := utils.EndOfDayMillis()
+	todayKey := time.UnixMilli(ttl).Format("20060102")
+	key := fmt.Sprintf("%s:%s", keyPrefix, todayKey)
+	result, err := r.allowFixedLimitScript.Run(ctx, r, []string{key}, ttl, maxCount).Int64()
 	if err != nil {
 		return false, err
 	}

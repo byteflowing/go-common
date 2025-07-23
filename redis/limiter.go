@@ -35,6 +35,8 @@ type Limiter struct {
 
 // NewLimiter : prefix为key的前缀
 // e.g. prefix: "sms:limit"
+// 常用于短信发送次数限制等场景
+// 每次请求都会放入zset中，对于有大量请求的场景会导致redis内存上涨
 func NewLimiter(rdb *Redis, prefix string, windows []*Window) *Limiter {
 	longest := 0
 	for _, window := range windows {
