@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/byteflowing/go-common/utils"
@@ -20,6 +21,7 @@ const (
 	defaultKeyPrefix    = "lock"
 	defaultTries        = 5
 	defaultWaitDuration = 5 * time.Millisecond
+	randMills           = 120000
 )
 
 type Options struct {
@@ -142,12 +144,14 @@ func (r *Redis) AllowFixedLimit(ctx context.Context, key string, expiration time
 
 // AllowDailyLimit 用于当天的限流次数
 // 常用于按自然天算api请求次数场景
-func (r *Redis) AllowDailyLimit(ctx context.Context, keyPrefix string, maxCount uint32) (bool, error) {
+func (r *Redis) AllowDailyLimit(ctx context.Context, prefix, target string, maxCount uint32) (bool, error) {
 	r.initDailyLimitScript()
 	ttl := utils.EndOfDayMillis()
+	// 加上随机值，避免0点大量key同时过期
+	randTTL := ttl + fastrand.Int63n(randMills)
 	todayKey := time.UnixMilli(ttl).Format("20060102")
-	key := fmt.Sprintf("%s:%s", keyPrefix, todayKey)
-	result, err := r.allowFixedLimitScript.Run(ctx, r, []string{key}, ttl, maxCount).Int64()
+	key := fmt.Sprintf("%s:%s:%s", prefix, todayKey, target)
+	result, err := r.allowFixedLimitScript.Run(ctx, r, []string{key}, randTTL, maxCount).Int64()
 	if err != nil {
 		return false, err
 	}
