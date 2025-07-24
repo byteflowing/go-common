@@ -23,6 +23,7 @@ func getSlidingWindowScript() *redis.Script {
 type Window struct {
 	Duration time.Duration // 限制周期
 	Limit    uint32        // 最大次数
+	Tag      string        // 标签，方便业务方感知被限流的窗口
 }
 
 type Limiter struct {
