@@ -1,12 +1,15 @@
 package orm
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type PageResult[T any] struct {
-	List     []*T
-	Page     uint32
-	PageSize uint32
-	Total    uint64
+	List       []*T
+	Page       uint32
+	PageSize   uint32
+	Total      uint64
+	TotalPages uint32
 }
 
 // Paginate 带total分页查询的封装
@@ -33,10 +36,12 @@ func Paginate[T any](tx *gorm.DB, page, pageSize uint32) (*PageResult[T], error)
 	} else {
 		list = []*T{}
 	}
+	totalPages := uint32((total + int64(pageSize) - 1) / int64(pageSize))
 	return &PageResult[T]{
-		List:     list,
-		Page:     page,
-		PageSize: pageSize,
-		Total:    uint64(total),
+		List:       list,
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      uint64(total),
+		TotalPages: totalPages,
 	}, nil
 }
