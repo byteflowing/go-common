@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/byteflowing/go-common/codec"
+	"github.com/byteflowing/go-common/crypto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -158,7 +158,7 @@ func TestReadConfig(t *testing.T) {
 }
 
 func createTempFile(ext, text string) (string, error) {
-	tmpFile, err := os.CreateTemp(os.TempDir(), codec.Md5Hex([]byte(text))+"*"+ext)
+	tmpFile, err := os.CreateTemp(os.TempDir(), crypto.Md5Hex([]byte(text))+"*"+ext)
 	if err != nil {
 		return "", err
 	}
