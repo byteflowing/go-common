@@ -18,17 +18,17 @@ type Sms struct {
 }
 
 type SmsOpts struct {
-	accessKeyId     string
-	accessKeySecret string
+	AccessKeyId     string
+	AccessKeySecret string
 }
 
 func NewSms(opts *SmsOpts) *Sms {
 	cli := sms.DefaultInstance
-	cli.Client.SetAccessKey(opts.accessKeyId)
-	cli.Client.SetSecretKey(opts.accessKeySecret)
+	cli.Client.SetAccessKey(opts.AccessKeyId)
+	cli.Client.SetSecretKey(opts.AccessKeySecret)
 	return &Sms{
-		accessKeyId:     opts.accessKeyId,
-		accessKeySecret: opts.accessKeySecret,
+		accessKeyId:     opts.AccessKeyId,
+		accessKeySecret: opts.AccessKeySecret,
 		cli:             cli,
 	}
 }
