@@ -1,7 +1,6 @@
 package volc
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/byteflowing/go-common/jsonx"
@@ -91,11 +90,6 @@ func (s *Sms) SendSms(req *SendSmsReq) (resp *SendSmsResp, err error) {
 		Service:   res.ResponseMetadata.Service,
 		Region:    res.ResponseMetadata.Region,
 	}
-	if res.ResponseMetadata.Error != nil {
-		commonResp.ErrCode = res.ResponseMetadata.Error.Code
-		commonResp.ErrMsg = res.ResponseMetadata.Error.Message
-	}
-	err = fmt.Errorf("errCode: %s, errMsg: %s", commonResp.ErrCode, commonResp.ErrMsg)
 	resp = &SendSmsResp{
 		SmsCommonResp: commonResp,
 		MessageID:     res.Result.MessageID[0],
@@ -126,11 +120,6 @@ func (s *Sms) SendSmsToMultiPhone(req *SendSmsToMultiPhoneReq) (resp *SendSmsToM
 		Service:   res.ResponseMetadata.Service,
 		Region:    res.ResponseMetadata.Region,
 	}
-	if res.ResponseMetadata.Error != nil {
-		commonResp.ErrCode = res.ResponseMetadata.Error.Code
-		commonResp.ErrMsg = res.ResponseMetadata.Error.Message
-	}
-	err = fmt.Errorf("errCode: %s, errMsg: %s", commonResp.ErrCode, commonResp.ErrMsg)
 	resp = &SendSmsToMultiPhoneResp{
 		SmsCommonResp: commonResp,
 		MessageID:     res.Result.MessageID,
