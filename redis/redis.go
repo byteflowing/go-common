@@ -9,7 +9,7 @@ import (
 	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
-	"github.com/byteflowing/go-common/utils"
+	"github.com/byteflowing/go-common/timex"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -146,7 +146,7 @@ func (r *Redis) AllowFixedLimit(ctx context.Context, key string, expiration time
 // 常用于按自然天算api请求次数场景
 func (r *Redis) AllowDailyLimit(ctx context.Context, prefix, target string, maxCount uint32) (bool, error) {
 	r.initDailyLimitScript()
-	ttl := utils.EndOfDayMillis()
+	ttl := timex.EndOfDayMillis()
 	// 加上随机值，避免0点大量key同时过期
 	randTTL := ttl + fastrand.Int63n(randMills)
 	todayKey := time.UnixMilli(ttl).Format("20060102")
