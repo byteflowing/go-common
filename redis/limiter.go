@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bytedance/gopkg/lang/fastrand"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/redis/go-redis/v9"
 )
@@ -30,61 +29,59 @@ type Limiter struct {
 	rdb     *Redis
 	prefix  string
 	windows []*Window
-	ttl     int
 	script  *redis.Script
 }
 
-// NewLimiter : prefix为key的前缀
-// e.g. prefix: "sms:limit"
-// 常用于短信发送次数限制等场景
-// 每次请求都会放入zset中，对于有大量请求的场景会导致redis内存上涨
+// NewLimiter : 创建带有滑动窗口的redis限流器，例如短信发送限制 1min 1次 5min 3次 1天 10次
+// @param prefix 为key的前缀 e.g. prefix: "sms:limit"
+// @param windows参数需要按照依次递增的顺序传递进来
+// @param window.Duration 最小只能支持到秒级
+// @param window.Tag 用于业务标记方便前端拼接弹窗信息
 func NewLimiter(rdb *Redis, prefix string, windows []*Window) *Limiter {
-	longest := 0
-	for _, window := range windows {
-		if int(window.Duration.Seconds()) > longest {
-			longest = int(window.Duration.Seconds())
-		}
-	}
 	return &Limiter{
 		rdb:     rdb,
 		prefix:  prefix,
 		windows: windows,
-		ttl:     longest,
 		script:  getSlidingWindowScript(),
 	}
 }
 
-// Allow : 如果没被限流则返回true, nil,nil
-// 如果被限流则返回 false, Window为被限流的窗口
-func (l *Limiter) Allow(ctx context.Context, key string) (bool, *Window, error) {
-	redisKey := fmt.Sprintf("%s:{%s}", l.prefix, key)
-	now := time.Now().Unix()
-	id := fmt.Sprintf("%d-%d", now, fastrand.Intn(100000))
-	args := l.buildArgs(now, id)
-	res, err := l.script.Run(ctx, l.rdb, []string{redisKey}, args...).Result()
-	if err != nil {
-		return false, nil, err
-	}
-	num, ok := res.(int64)
-	if !ok {
-		return false, nil, fmt.Errorf("unexpected result type %T", res)
-	}
-	// 1 表示没有被限流
-	if num == 1 {
-		return true, nil, nil
-	}
-	// 被限流返回对应窗口
-	if num >= 100 {
-		index := int(num - 100)
-		return false, l.windows[index], nil
-	}
-	return false, nil, fmt.Errorf("unexpected return value: %d", num)
-}
+// Allow 判断key是否被允许
+// @return allowed 是否被允许
+// @return blocked 如果不允许返回被限制的窗口
+// @return retryAfter 如果被限制还有多少s会解除限制
+// @return err 错误信息
+func (l *Limiter) Allow(ctx context.Context, key string) (allowed bool, blocked *Window, retryAfter int64, err error) {
+	var redisKeys []string
+	var args []interface{}
 
-func (l *Limiter) buildArgs(now int64, id string) []interface{} {
-	args := []interface{}{now, id, l.ttl}
-	for _, window := range l.windows {
-		args = append(args, int(window.Duration.Seconds()), window.Limit)
+	for _, win := range l.windows {
+		redisKey := fmt.Sprintf("%s:{%s}:%ds", l.prefix, key, int(win.Duration.Seconds()))
+		redisKeys = append(redisKeys, redisKey)
+		args = append(args, int(win.Duration.Seconds()), win.Limit)
 	}
-	return args
+
+	res, err := l.script.Run(ctx, l.rdb, redisKeys, args...).Result()
+	if err != nil {
+		return false, nil, 0, err
+	}
+
+	arr, ok := res.([]interface{})
+	if !ok || len(arr) != 2 {
+		return false, nil, 0, fmt.Errorf("unexpected Lua result: %#v", res)
+	}
+
+	code, _ := arr[0].(int64)
+	ttl, _ := arr[1].(int64)
+
+	if code == 1 {
+		return true, nil, 0, nil
+	}
+
+	idx := code - 100
+	if idx < 0 || int(idx) >= len(l.windows) {
+		return false, nil, 0, fmt.Errorf("invalid limit index %d", idx)
+	}
+
+	return false, l.windows[idx], ttl, nil
 }
