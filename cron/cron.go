@@ -19,14 +19,15 @@ type (
 )
 
 var (
-	DefaultLogger      = cron.DefaultLogger
-	NewParser          = cron.NewParser
-	WithLogger         = cron.WithLogger
-	WithLocation       = cron.WithLocation
-	WithChain          = cron.WithChain
-	SkipIfStillRunning = cron.SkipIfStillRunning
-	Recover            = cron.Recover
-	Every              = cron.Every
+	DefaultLogger       = cron.DefaultLogger
+	NewParser           = cron.NewParser
+	WithLogger          = cron.WithLogger
+	WithLocation        = cron.WithLocation
+	WithChain           = cron.WithChain
+	SkipIfStillRunning  = cron.SkipIfStillRunning
+	DelayIfStillRunning = cron.DelayIfStillRunning
+	Recover             = cron.Recover
+	Every               = cron.Every
 )
 
 type Cron struct {
