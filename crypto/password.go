@@ -27,7 +27,7 @@ func (ph *PasswordHasher) HashPassword(password string) (string, error) {
 	if password == "" {
 		return "", errors.New("empty password")
 	}
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), ph.cost)
 	if err != nil {
 		return "", err
 	}
