@@ -77,8 +77,6 @@ func New(c *Config) *Redis {
 	return r
 }
 
-// Lock redis distributed lock
-// 默认使用"lock"作为前缀，可以使用With
 func (r *Redis) Lock(ctx context.Context, key string, expiration time.Duration, options ...Option) (identifier string, err error) {
 	identifier = idx.UUIDv4()
 	waitDuration, tries := parseLockOptions(options)
