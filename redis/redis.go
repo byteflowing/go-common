@@ -17,6 +17,11 @@ const (
 	Nil = redis.Nil
 )
 
+var (
+	ErrLock                = errors.New("lock failed")
+	ErrLockAlreadyReleased = errors.New("lock already released")
+)
+
 const (
 	defaultKeyPrefix    = "lock"
 	defaultTries        = 5
@@ -72,10 +77,11 @@ func New(c *Config) *Redis {
 	return r
 }
 
+// Lock redis distributed lock
+// 默认使用"lock"作为前缀，可以使用With
 func (r *Redis) Lock(ctx context.Context, key string, expiration time.Duration, options ...Option) (identifier string, err error) {
 	identifier = idx.UUIDv4()
-	prefix, waitDuration, tries := parseLockOptions(options)
-	key = fmt.Sprintf("%s:%s", prefix, key)
+	waitDuration, tries := parseLockOptions(options)
 	for i := 0; i < tries; i++ {
 		select {
 		case <-ctx.Done():
@@ -91,13 +97,11 @@ func (r *Redis) Lock(ctx context.Context, key string, expiration time.Duration, 
 			time.Sleep(waitDuration)
 		}
 	}
-	return "", errors.New("failed to acquire lock within tries")
+	return "", ErrLock
 }
 
 func (r *Redis) Unlock(ctx context.Context, key, identifier string, options ...Option) (err error) {
 	r.initUnLockScript()
-	prefix, _, _ := parseLockOptions(options)
-	key = fmt.Sprintf("%s:%s", prefix, key)
 	result, err := r.unLockScript.Run(ctx, r, []string{key}, []string{identifier}).Int()
 	if err != nil {
 		return err
@@ -105,13 +109,11 @@ func (r *Redis) Unlock(ctx context.Context, key, identifier string, options ...O
 	if result == 1 {
 		return nil
 	}
-	return fmt.Errorf("unlock failed: key %s is no longer valid or mismatched identifier", key)
+	return ErrLockAlreadyReleased
 }
 
 func (r *Redis) RenewLock(ctx context.Context, key, identifier string, expiration time.Duration, options ...Option) (err error) {
 	r.initRenewLockScript()
-	prefix, _, _ := parseLockOptions(options)
-	key = fmt.Sprintf("%s:%s", prefix, key)
 	result, err := r.renewLockScript.Run(ctx, r, []string{key}, identifier, expiration.Milliseconds()).Int()
 	if err != nil {
 		return err
@@ -119,7 +121,7 @@ func (r *Redis) RenewLock(ctx context.Context, key, identifier string, expiratio
 	if result == 1 {
 		return nil
 	}
-	return fmt.Errorf("renew failed: key %s is no longer valid or mismatched identifier", key)
+	return ErrLockAlreadyReleased
 }
 
 // IncrWithExpire IncrWithExpire: 如果是第一次，则会添加过期时间
@@ -158,13 +160,6 @@ func (r *Redis) AllowDailyLimit(ctx context.Context, prefix, target string, maxC
 	return result == 1, nil
 }
 
-// WithLockKeyPrefix : 设置key前缀
-func WithLockKeyPrefix(prefix string) Option {
-	return func(o *Options) {
-		o.LockKeyPrefix = prefix
-	}
-}
-
 // WithLockTryTimes : 设置抢锁失败重试次数
 func WithLockTryTimes(times int) Option {
 	return func(o *Options) {
@@ -179,8 +174,7 @@ func WithLockWaitDuration(duration time.Duration) Option {
 	}
 }
 
-func parseLockOptions(options []Option) (prefix string, waitDuration time.Duration, tries int) {
-	prefix = defaultKeyPrefix
+func parseLockOptions(options []Option) (waitDuration time.Duration, tries int) {
 	waitDuration = defaultWaitDuration
 	tries = defaultTries
 	if len(options) == 0 {
@@ -195,9 +189,6 @@ func parseLockOptions(options []Option) (prefix string, waitDuration time.Durati
 	}
 	if ops.LockWaitDuration > 0 {
 		waitDuration = ops.LockWaitDuration
-	}
-	if len(ops.LockKeyPrefix) > 0 {
-		prefix = ops.LockKeyPrefix
 	}
 	return
 }
