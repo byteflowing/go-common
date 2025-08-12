@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/byteflowing/go-common/ratelimit"
 	"github.com/wneessen/go-mail"
 )
 
@@ -47,20 +46,17 @@ type Mail struct {
 
 type SMTP struct {
 	cli         *mail.Client
-	limiter     *ratelimit.Limiter
 	isConnected bool
 	mux         sync.RWMutex
 }
 
 type SMTPOpts struct {
-	Host          string // 必选，smtp server地址
-	Port          int    // 必选，端口
-	Username      string // 必选，用户名
-	Password      string // 必选，密码
-	SkipTLS       bool   // 可选，仅测试使用
-	Timeout       int    // 超时时间,单位s
-	LimitDuration uint64 // 限流时间间隔，单位s
-	LimitMax      uint64 // 在时间间隔内的最大值，例如: 1s内最多100次请求, 180s内最多5000次请求等
+	Host     string // 必选，smtp server地址
+	Port     int    // 必选，端口
+	Username string // 必选，用户名
+	Password string // 必选，密码
+	SkipTLS  bool   // 可选，仅测试使用
+	Timeout  int    // 超时时间,单位s
 }
 
 func NewSMTP(opts *SMTPOpts) *SMTP {
@@ -83,11 +79,7 @@ func NewSMTP(opts *SMTPOpts) *SMTP {
 	if err != nil {
 		panic(err)
 	}
-	limiter := ratelimit.NewLimiter(time.Duration(opts.LimitDuration)*time.Second, opts.LimitMax, opts.LimitMax)
-	return &SMTP{
-		cli:     cli,
-		limiter: limiter,
-	}
+	return &SMTP{cli: cli}
 }
 
 // DialAndSend 每次都会建立连接发送邮件关闭连接
@@ -95,9 +87,6 @@ func NewSMTP(opts *SMTPOpts) *SMTP {
 func (s *SMTP) DialAndSend(ctx context.Context, mails ...*Mail) error {
 	if len(mails) == 0 {
 		return errors.New("mail list is empty")
-	}
-	if err := s.limiter.Wait(ctx); err != nil {
-		return err
 	}
 	messages, err := s.convert2Messages(mails...)
 	if err != nil {
@@ -151,9 +140,6 @@ func (s *SMTP) Reset() error {
 func (s *SMTP) Send(ctx context.Context, mails ...*Mail) error {
 	if len(mails) == 0 {
 		return errors.New("mail list is empty")
-	}
-	if err := s.limiter.Wait(ctx); err != nil {
-		return err
 	}
 	messages, err := s.convert2Messages(mails...)
 	if err != nil {
