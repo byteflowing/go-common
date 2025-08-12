@@ -134,6 +134,13 @@ func (s *SMTP) Close(ctx context.Context) error {
 	return nil
 }
 
+// IsConnected 判断当前是否连接到smtp server
+func (s *SMTP) IsConnected() bool {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+	return s.isConnected
+}
+
 // Reset 重置与smtp server的连接状态
 func (s *SMTP) Reset() error {
 	return s.cli.Reset()
