@@ -6,13 +6,13 @@ import (
 	"github.com/sony/sonyflake"
 )
 
-// SnowFlakeIDGenerator 雪花算法的sony实现
+// GlobalIDGenerator 雪花算法的sony实现
 // 文档：https://github.com/sony/sonyflake
-type SnowFlakeIDGenerator struct {
+type GlobalIDGenerator struct {
 	generator *sonyflake.Sonyflake
 }
 
-type SnowFlakeOpts struct {
+type GlobalIDOpts struct {
 	// 开始时间建议设置为项目开始时间
 	// 不要设置未来时间，会导致时间回拨等问题
 	// 格式："20060102150405"
@@ -26,7 +26,7 @@ type SnowFlakeOpts struct {
 	CheckMachineID func(uint16) bool
 }
 
-func NewSnowFlakeIDGenerator(opts *SnowFlakeOpts) (sf *SnowFlakeIDGenerator, err error) {
+func NewGlobalIDGenerator(opts *GlobalIDOpts) (sf *GlobalIDGenerator, err error) {
 	t, err := time.Parse("20060102150405", opts.StartTime)
 	if err != nil {
 		return nil, err
@@ -43,12 +43,12 @@ func NewSnowFlakeIDGenerator(opts *SnowFlakeOpts) (sf *SnowFlakeIDGenerator, err
 	if err != nil {
 		return nil, err
 	}
-	return &SnowFlakeIDGenerator{generator: flake}, nil
+	return &GlobalIDGenerator{generator: flake}, nil
 }
 
 // NextID 生成全局ID
 // 每 10 毫秒最多可以生成 256 个 ID
-func (s *SnowFlakeIDGenerator) NextID() (id uint64, err error) {
+func (s *GlobalIDGenerator) NextID() (id uint64, err error) {
 	return s.generator.NextID()
 }
 
@@ -58,6 +58,6 @@ func (s *SnowFlakeIDGenerator) NextID() (id uint64, err error) {
 // time：时间戳部分，表示从 StartTime 开始到 ID 生成的时间。
 // sequence：序列号，用于防止同一时间戳内的 ID 冲突。
 // machine-id：机器 ID，标识生成该 ID 的机器。
-func (s *SnowFlakeIDGenerator) Decompose(id uint64) map[string]uint64 {
+func (s *GlobalIDGenerator) Decompose(id uint64) map[string]uint64 {
 	return sonyflake.Decompose(id)
 }
