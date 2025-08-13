@@ -59,7 +59,7 @@ type SMTPOpts struct {
 	Timeout  int    // 超时时间,单位s
 }
 
-func NewSMTP(opts *SMTPOpts) *SMTP {
+func NewSMTP(opts *SMTPOpts) (smtp *SMTP, err error) {
 	var clientOpts []mail.Option
 	clientOpts = append(
 		clientOpts,
@@ -77,9 +77,9 @@ func NewSMTP(opts *SMTPOpts) *SMTP {
 	}
 	cli, err := mail.NewClient(opts.Host, clientOpts...)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return &SMTP{cli: cli}
+	return &SMTP{cli: cli}, nil
 }
 
 // DialAndSend 每次都会建立连接发送邮件关闭连接
