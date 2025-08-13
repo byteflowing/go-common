@@ -1,22 +1,26 @@
 package mini
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/byteflowing/go-common/jsonx"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/byteflowing/go-common/jsonx"
 )
 
 const (
-	code2SessionURL    = "https://api.weixin.qq.com/sns/jscode2session"
-	checkSessionKeyURl = "https://api.weixin.qq.com/wxa/checksession"
-	getAccessTokenURL  = "https://api.weixin.qq.com/cgi-bin/token"
-	resetSessionKeyURL = "https://api.weixin.qq.com/wxa/resetusersessionkey"
+	code2SessionURL         = "https://api.weixin.qq.com/sns/jscode2session"
+	checkSessionKeyURl      = "https://api.weixin.qq.com/wxa/checksession"
+	getAccessTokenURL       = "https://api.weixin.qq.com/cgi-bin/token"
+	getStableAccessTokenURL = "https://api.weixin.qq.com/cgi-bin/stable_token"
+	resetSessionKeyURL      = "https://api.weixin.qq.com/wxa/resetusersessionkey"
+	getPhoneNumberURL       = "https://api.weixin.qq.com/wxa/business/getuserphonenumber"
 
 	loginGrantType       = "authorization_code"
 	accessTokenGrantType = "client_credential"
@@ -43,15 +47,6 @@ func NewMiniClient(opts *Opts) *Client {
 	}
 }
 
-func (mini *Client) request(reqURL string) ([]byte, error) {
-	response, err := mini.httpClient.Get(reqURL)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-	return io.ReadAll(response.Body)
-}
-
 // WechatLogin 小程序登录
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/code2Session.html
 func (mini *Client) WechatLogin(ctx context.Context, req *WechatLoginReq) (resp *WechatLoginResp, err error) {
@@ -76,6 +71,7 @@ func (mini *Client) WechatLogin(ctx context.Context, req *WechatLoginReq) (resp 
 }
 
 // GetAccessToken : 获取接口调用凭据
+// 建议优先使用GetStableAccessToken接口
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-access-token/getAccessToken.html
 func (mini *Client) GetAccessToken(ctx context.Context, _ *GetAccessTokenReq) (resp *GetAccessTokenResp, err error) {
 	params := url.Values{}
@@ -89,6 +85,35 @@ func (mini *Client) GetAccessToken(ctx context.Context, _ *GetAccessTokenReq) (r
 	}
 	resp = &GetAccessTokenResp{}
 	if err = jsonx.Unmarshal(body, resp); err != nil {
+		return nil, err
+	}
+	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+		return nil, err
+	}
+	return
+}
+
+// GetStableAccessToken : 获取接口调用凭证
+// 与GetAccessToken的区别是：1. 接口允许调用次数比较多 2.在过期前每次调用返回的token都一样(force_refresh:false) 3.小项目可以直接每次调用该接口获取token，免去部署中心服务
+// 建议还是存在redis或者本地缓存中，把过期时间设置为过期前五分钟，然后重新获取
+// 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-access-token/getStableAccessToken.html
+func (mini *Client) GetStableAccessToken(ctx context.Context, req *GetAccessTokenReq) (resp *GetAccessTokenResp, err error) {
+	body := &GetStableAccessTokenBody{
+		GrantType:    accessTokenGrantType,
+		AppID:        mini.AppID,
+		Secret:       mini.Secret,
+		ForceRefresh: req.ForceRefresh,
+	}
+	bodyBytes, err := jsonx.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := mini.postRequest(getStableAccessTokenURL, bodyBytes)
+	if err != nil {
+		return nil, err
+	}
+	resp = &GetAccessTokenResp{}
+	if err = jsonx.Unmarshal(respBody, resp); err != nil {
 		return nil, err
 	}
 	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
@@ -145,6 +170,32 @@ func (mini *Client) ResetSessionKey(ctx context.Context, req *ResetSessionReq) (
 	return
 }
 
+func (mini *Client) GetPhoneNumber(ctx context.Context, req *GetPhoneNumberReq) (resp *GetPhoneNumberResp, err error) {
+	params := url.Values{}
+	params.Add("access_token", req.AccessToken)
+	_url := fmt.Sprintf("%s?%s", getPhoneNumberURL, params.Encode())
+	body := &GetPhoneNumberBody{
+		Code:   req.Code,
+		OpenID: req.OpenID,
+	}
+	bodyBytes, err := jsonx.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := mini.postRequest(_url, bodyBytes)
+	if err != nil {
+		return nil, err
+	}
+	resp = &GetPhoneNumberResp{}
+	if err = jsonx.Unmarshal(respBody, resp); err != nil {
+		return nil, err
+	}
+	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+		return nil, err
+	}
+	return
+}
+
 func (mini *Client) signSessionKey(sessionKey string) (signature string) {
 	h := hmac.New(sha256.New, []byte(sessionKey))
 	h.Write([]byte(sessionKey))
@@ -156,4 +207,23 @@ func (mini *Client) checkWechatErr(errCode int, errMsg string) (err error) {
 		return nil
 	}
 	return fmt.Errorf("%d:%s", errCode, errMsg)
+}
+
+func (mini *Client) request(reqURL string) ([]byte, error) {
+	response, err := mini.httpClient.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	return io.ReadAll(response.Body)
+}
+
+func (mini *Client) postRequest(reqUrl string, body []byte) ([]byte, error) {
+	reader := bytes.NewReader(body)
+	response, err := mini.httpClient.Post(reqUrl, "application/json", reader)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	return io.ReadAll(response.Body)
 }
