@@ -5,24 +5,24 @@ go 1.23.0
 toolchain go1.23.7
 
 require (
-	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.9
+	github.com/alibabacloud-go/darabonba-openapi/v2 v2.1.11
 	github.com/alibabacloud-go/dysmsapi-20170525/v4 v4.1.3
 	github.com/alibabacloud-go/sts-20150401/v2 v2.0.4
-	github.com/alibabacloud-go/tea v1.3.10
+	github.com/alibabacloud-go/tea v1.3.11
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
-	github.com/bytedance/gopkg v0.1.2
+	github.com/bytedance/gopkg v0.1.3
 	github.com/bytedance/sonic v1.14.0
 	github.com/coocood/freecache v1.2.4
 	github.com/google/uuid v1.6.0
-	github.com/redis/go-redis/v9 v9.11.0
+	github.com/redis/go-redis/v9 v9.12.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/sonyflake v1.3.0
 	github.com/spaolacci/murmur3 v1.1.0
 	github.com/spf13/viper v1.20.1
 	github.com/sqids/sqids-go v0.4.1
 	github.com/stretchr/testify v1.10.0
-	github.com/volcengine/ve-tos-golang-sdk/v2 v2.7.18
-	github.com/volcengine/volc-sdk-golang v1.0.216
+	github.com/volcengine/ve-tos-golang-sdk/v2 v2.7.21
+	github.com/volcengine/volc-sdk-golang v1.0.218
 	github.com/wneessen/go-mail v0.6.2
 	golang.org/x/crypto v0.41.0
 	golang.org/x/time v0.12.0
