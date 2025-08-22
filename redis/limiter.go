@@ -85,3 +85,12 @@ func (l *Limiter) Allow(ctx context.Context, key string) (allowed bool, blocked 
 
 	return false, l.windows[idx], ttl, nil
 }
+
+func (l *Limiter) Reset(ctx context.Context, key string) error {
+	var redisKeys []string
+	for _, win := range l.windows {
+		redisKey := fmt.Sprintf("%s:{%s}:%ds", l.prefix, key, int(win.Duration.Seconds()))
+		redisKeys = append(redisKeys, redisKey)
+	}
+	return l.rdb.Del(ctx, redisKeys...).Err()
+}
