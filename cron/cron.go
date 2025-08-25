@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"time"
 
 	"github.com/robfig/cron/v3"
 )
@@ -153,8 +154,33 @@ func (c *Cron) Remove(id EntryID) {
 	c.cron.Remove(id)
 }
 
+func (c *Cron) Location() *time.Location {
+	return c.cron.Location()
+}
+
+// ParseStandard 依据标准的cron表达式返回一个Schedule
+// 比如讲spec写入配置文件，使用Parse解析配置文件中的定时任务配置
+//
+//		spec := "*/10 * * * * *" // 配置里读出来的
+//		schedule, _ := cron.ParseStandard(spec)
+//		c.AddJob(schedule, cron.FuncJob(func() {
+//	 fmt.Println("每 10 秒执行一次")
+//		}))
+//		c.Start()
+//
+// cron标准表达式：https://en.wikipedia.org/wiki/Cron
+func (c *Cron) ParseStandard(spec string) (Schedule, error) {
+	return cron.ParseStandard(spec)
+}
+
+// Start 新建一个goroutines中运行（非阻塞）
 func (c *Cron) Start() {
 	c.cron.Start()
+}
+
+// Run 在当前goroutine中运行 （阻塞）
+func (c *Cron) Run() {
+	c.cron.Run()
 }
 
 func (c *Cron) Stop() context.Context {
