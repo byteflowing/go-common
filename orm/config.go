@@ -146,12 +146,12 @@ type MySQLConfig struct {
 	User         string // 数据库用户名
 	Password     string // 数据库密码
 	DBName       string // 数据库名
-	Port         int    `default:"3306"`    // 端口号
-	Charset      string `default:"utf8mb4"` // 字符集
-	Location     string `default:"Local"`   // 时区
-	ConnTimeout  int    `default:"30"`      // 单位：秒
-	ReadTimeout  int    `default:"30"`      // 单位：秒
-	WriteTimeout int    `default:"30"`      // 单位：秒
+	Port         int    // 端口号
+	Charset      string // 字符集
+	Location     string // 时区
+	ConnTimeout  int    // 单位：秒
+	ReadTimeout  int    // 单位：秒
+	WriteTimeout int    // 单位：秒
 }
 
 func (m *MySQLConfig) GetDSN() string {
@@ -214,7 +214,7 @@ type SQLServerConfig struct {
 	User     string // 数据库用户名
 	Password string // 数据库密码
 	DBName   string // 数据库名
-	Port     int    `default:"1433"` // 端口号
+	Port     int    // 端口号
 }
 
 func (s *SQLServerConfig) GetDSN() string {
