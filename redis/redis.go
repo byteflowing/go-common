@@ -23,7 +23,6 @@ var (
 )
 
 const (
-	defaultKeyPrefix    = "lock"
 	defaultTries        = 5
 	defaultWaitDuration = 5 * time.Millisecond
 	randMills           = 120000
