@@ -56,7 +56,7 @@ func (l *Limiter) Allow(ctx context.Context, key string) (allowed bool, blocked 
 	var args []interface{}
 
 	for _, win := range l.windows {
-		redisKey := fmt.Sprintf("%s:{%s}:%ds", l.prefix, key, int(win.Duration.Seconds()))
+		redisKey := l.getRedisKey(key, int(win.Duration.Seconds()))
 		redisKeys = append(redisKeys, redisKey)
 		args = append(args, int(win.Duration.Seconds()), win.Limit)
 	}
@@ -89,8 +89,12 @@ func (l *Limiter) Allow(ctx context.Context, key string) (allowed bool, blocked 
 func (l *Limiter) Reset(ctx context.Context, key string) error {
 	var redisKeys []string
 	for _, win := range l.windows {
-		redisKey := fmt.Sprintf("%s:{%s}:%ds", l.prefix, key, int(win.Duration.Seconds()))
+		redisKey := l.getRedisKey(key, int(win.Duration.Seconds()))
 		redisKeys = append(redisKeys, redisKey)
 	}
 	return l.rdb.Del(ctx, redisKeys...).Err()
+}
+
+func (l *Limiter) getRedisKey(key string, win int) string {
+	return fmt.Sprintf("%s:{%s}:%ds", l.prefix, key, win)
 }
