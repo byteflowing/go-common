@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	DbType    string `default:"mysql"`
+	DbType    string
 	Log       *LogConfig
 	Conn      *ConnConfig
 	MySQL     *MySQLConfig
@@ -23,7 +23,7 @@ type Config struct {
 }
 
 type SQLConfig struct {
-	DBType   string   `default:"mysql"` // 数据库类型 mysql postgres sqlserver sqlite
+	DBType   string   // 数据库类型 mysql postgres sqlserver sqlite
 	SQL      []string // sql语句
 	FilePath []string // sql文件或者目录
 }
