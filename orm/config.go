@@ -30,22 +30,22 @@ type SQLConfig struct {
 
 type LogConfig struct {
 	// 慢日志阈值，单位ms
-	SlowThreshold uint `default:"200""`
+	SlowThreshold uint
 	// 输出
 	// stdout, file
-	Out string `default:"stdout"`
+	Out string
 	// 是否彩色打印日志
-	Colorful bool `default:"true"`
+	Colorful bool
 	// 忽略RecordNotFoundError
-	IgnoreRecordNotFoundError bool `default:"false"`
+	IgnoreRecordNotFoundError bool
 	// 不在日志中打印参数
-	ParameterizedQueries bool `default:"false"`
+	ParameterizedQueries bool
 	// 日志级别
 	// silent
 	// error
 	// warn
 	// info
-	Level string `default:"silent"`
+	Level string
 	// 日志轮转
 	LogRotation *LogRotationConfig
 }
@@ -119,10 +119,10 @@ func (db DatabaseType) String() string {
 }
 
 type ConnConfig struct {
-	ConnMaxLifetime int `default:"1800"` // 单位：秒
-	MaxIdleTime     int `default:"600"`  // 单位：秒
-	MaxIdleConnes   int `default:"20"`   // 最大空闲连接
-	MaxOpenConnes   int `default:"100"`  // 最大打开连接
+	ConnMaxLifetime int // 单位：秒
+	MaxIdleTime     int // 单位：秒
+	MaxIdleConnes   int // 最大空闲连接
+	MaxOpenConnes   int // 最大打开连接
 }
 
 func (c *ConnConfig) GetMaxIdleTime() time.Duration {
