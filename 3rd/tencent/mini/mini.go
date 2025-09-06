@@ -48,7 +48,7 @@ func NewMiniClient(opts *wechatv1.WechatCredential) *Client {
 
 // WechatLogin 小程序登录
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/code2Session.html
-func (mini *Client) WechatLogin(ctx context.Context, req *wechatv1.WechatSignInReq) (resp *WechatLoginResp, err error) {
+func (mini *Client) WechatLogin(ctx context.Context, req *wechatv1.WechatSignInReq) (resp *wechatv1.WechatSignInResp, err error) {
 	params := url.Values{}
 	params.Add("js_code", req.Code)
 	params.Add("appid", mini.AppID)
@@ -59,12 +59,18 @@ func (mini *Client) WechatLogin(ctx context.Context, req *wechatv1.WechatSignInR
 	if err != nil {
 		return nil, err
 	}
-	resp = &WechatLoginResp{}
+	res := &WechatLoginResp{}
 	if err = jsonx.Unmarshal(body, resp); err != nil {
 		return nil, err
 	}
-	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+	if err = mini.checkWechatErr(res.ErrCode, res.ErrMsg); err != nil {
 		return nil, err
+	}
+	resp = &wechatv1.WechatSignInResp{
+		Appid:      req.Appid,
+		Openid:     res.OpenID,
+		SessionKey: res.SessionKey,
+		UnionId:    res.UnionID,
 	}
 	return
 }
