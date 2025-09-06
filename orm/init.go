@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
+	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
 )
 
 func initMySQL(c *dbv1.DbConfig) *gorm.DB {

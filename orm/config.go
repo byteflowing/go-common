@@ -9,9 +9,9 @@ import (
 
 	"gorm.io/gorm/logger"
 
-	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
-	enumv1 "github.com/byteflowing/go-common/gen/enums/v1"
 	"github.com/byteflowing/go-common/rotation"
+	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 )
 
 func getLogWriter(config *dbv1.DbLog) io.Writer {

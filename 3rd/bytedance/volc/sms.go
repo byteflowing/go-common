@@ -3,8 +3,8 @@ package volc
 import (
 	"fmt"
 
-	smsv1 "github.com/byteflowing/go-common/gen/sms/v1"
 	"github.com/byteflowing/go-common/jsonx"
+	smsv1 "github.com/byteflowing/proto/gen/go/sms/v1"
 	"github.com/volcengine/volc-sdk-golang/service/sms"
 )
 

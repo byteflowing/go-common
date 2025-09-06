@@ -6,8 +6,8 @@ import (
 	"errors"
 	"sync"
 
-	enumv1 "github.com/byteflowing/go-common/gen/enums/v1"
-	mailv1 "github.com/byteflowing/go-common/gen/mail/v1"
+	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
+	mailv1 "github.com/byteflowing/proto/gen/go/mail/v1"
 	"github.com/wneessen/go-mail"
 )
 

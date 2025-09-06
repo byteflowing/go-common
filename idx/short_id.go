@@ -1,7 +1,7 @@
 package idx
 
 import (
-	idxv1 "github.com/byteflowing/go-common/gen/idx/v1"
+	idxv1 "github.com/byteflowing/proto/gen/go/idx/v1"
 	"github.com/sqids/sqids-go"
 )
 

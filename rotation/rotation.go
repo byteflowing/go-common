@@ -1,7 +1,7 @@
 package rotation
 
 import (
-	logv1 "github.com/byteflowing/go-common/gen/log/v1"
+	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

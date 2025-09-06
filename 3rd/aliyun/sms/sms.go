@@ -9,8 +9,8 @@ import (
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	smsCli "github.com/alibabacloud-go/dysmsapi-20170525/v4/client"
 	"github.com/alibabacloud-go/tea/tea"
-	smsv1 "github.com/byteflowing/go-common/gen/sms/v1"
 	"github.com/byteflowing/go-common/jsonx"
+	smsv1 "github.com/byteflowing/proto/gen/go/sms/v1"
 )
 
 type Sms struct {

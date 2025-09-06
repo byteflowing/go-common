@@ -12,9 +12,9 @@ import (
 	"net/url"
 	"time"
 
-	wechatv1 "github.com/byteflowing/go-common/gen/wechat/v1"
 	"github.com/byteflowing/go-common/jsonx"
 	"github.com/byteflowing/go-common/trans"
+	wechatv1 "github.com/byteflowing/proto/gen/go/wechat/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

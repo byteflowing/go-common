@@ -4,8 +4,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/rawsql"
 
-	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
-	enumv1 "github.com/byteflowing/go-common/gen/enums/v1"
+	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 )
 
 func New(c *dbv1.DbConfig) *gorm.DB {

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	limiterv1 "github.com/byteflowing/go-common/gen/limiter/v1"
 	redisWrapper "github.com/byteflowing/go-common/redis"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/byteflowing/go-common/trans"
+	limiterv1 "github.com/byteflowing/proto/gen/go/limiter/v1"
 	"github.com/redis/go-redis/v9"
 )
 

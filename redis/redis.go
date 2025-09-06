@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/bytedance/gopkg/lang/fastrand"
-	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/byteflowing/go-common/timex"
+	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
 	"github.com/redis/go-redis/v9"
 )
 
