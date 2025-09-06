@@ -1,6 +1,9 @@
 package rotation
 
-import "gopkg.in/natefinch/lumberjack.v2"
+import (
+	logv1 "github.com/byteflowing/go-common/gen/log/v1"
+	"gopkg.in/natefinch/lumberjack.v2"
+)
 
 type Config struct {
 	LogFile    string `json:"logFile"`    // 文件名
@@ -11,15 +14,15 @@ type Config struct {
 	LocalTime  bool   `json:"localTime"`  // 是否使用本地时间
 }
 
-func NewRotation(opts *Config) *lumberjack.Logger {
+func NewRotation(opts *logv1.RotationConfig) *lumberjack.Logger {
 	if opts == nil {
 		panic("Config must not be nil")
 	}
 	return &lumberjack.Logger{
 		Filename:   opts.LogFile,
-		MaxSize:    opts.MaxSize,
-		MaxAge:     opts.MaxAge,
-		MaxBackups: opts.MaxBackups,
+		MaxSize:    int(opts.MaxSize),
+		MaxAge:     int(opts.MaxAge),
+		MaxBackups: int(opts.MaxBackups),
 		LocalTime:  opts.LocalTime,
 		Compress:   opts.Compress,
 	}

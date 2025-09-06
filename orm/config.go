@@ -9,230 +9,114 @@ import (
 
 	"gorm.io/gorm/logger"
 
+	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
+	enumv1 "github.com/byteflowing/go-common/gen/enums/v1"
 	"github.com/byteflowing/go-common/rotation"
 )
 
-type Config struct {
-	DbType    string
-	Log       *LogConfig
-	Conn      *ConnConfig
-	MySQL     *MySQLConfig
-	Postgres  *PostgresConfig
-	SQLServer *SQLServerConfig
-	SQLite    *SQLiteConfig
-}
-
-type SQLConfig struct {
-	DBType   string   // 数据库类型 mysql postgres sqlserver sqlite
-	SQL      []string // sql语句
-	FilePath []string // sql文件或者目录
-}
-
-type LogConfig struct {
-	// 慢日志阈值，单位ms
-	SlowThreshold uint
-	// 输出
-	// stdout, file
-	Out string
-	// 是否彩色打印日志
-	Colorful bool
-	// 忽略RecordNotFoundError
-	IgnoreRecordNotFoundError bool
-	// 不在日志中打印参数
-	ParameterizedQueries bool
-	// 日志级别
-	// silent
-	// error
-	// warn
-	// info
-	Level string
-	// 日志轮转
-	LogRotation *LogRotationConfig
-}
-
-func (l *LogConfig) getLogWriter() io.Writer {
-	switch l.Out {
-	case "stdout":
+func getLogWriter(config *dbv1.DbLog) io.Writer {
+	switch config.Out {
+	case enumv1.DbLogOut_DB_LOG_OUT_STDOUT:
 		return os.Stdout
-	case "file":
-		return rotation.NewRotation(&rotation.Config{
-			LogFile:    l.LogRotation.LogFile,
-			MaxSize:    l.LogRotation.MaxSize,
-			MaxAge:     l.LogRotation.MaxAge,
-			MaxBackups: l.LogRotation.MaxBackups,
-			Compress:   l.LogRotation.Compress,
-			LocalTime:  l.LogRotation.LocalTime,
-		})
+	case enumv1.DbLogOut_DB_LOG_OUT_FILE:
+		return rotation.NewRotation(config.Rotation)
 	default:
 		return os.Stdout
 	}
 }
 
-func (l *LogConfig) getLogLevel() logger.LogLevel {
-	switch l.Level {
-	case "silent":
+func getLogLevel(config *dbv1.DbLog) logger.LogLevel {
+	switch config.Level {
+	case enumv1.DbLogLevel_DB_LOG_LEVEL_SILENT:
 		return logger.Silent
-	case "error":
+	case enumv1.DbLogLevel_DB_LOG_LEVEL_ERROR:
 		return logger.Error
-	case "warn":
+	case enumv1.DbLogLevel_DB_LOG_LEVEL_WARN:
 		return logger.Warn
-	case "info":
+	case enumv1.DbLogLevel_DB_LOG_LEVEL_INFO:
 		return logger.Info
 	}
 	return logger.Silent
 }
 
-func (l *LogConfig) getLogConfig() logger.Config {
+func getLogConfig(config *dbv1.DbLog) logger.Config {
 	return logger.Config{
-		SlowThreshold:             time.Duration(l.SlowThreshold) * time.Millisecond,
-		Colorful:                  l.Colorful,
-		IgnoreRecordNotFoundError: l.IgnoreRecordNotFoundError,
-		ParameterizedQueries:      l.ParameterizedQueries,
-		LogLevel:                  l.getLogLevel(),
+		SlowThreshold:             time.Duration(config.SlowThreshold) * time.Millisecond,
+		Colorful:                  config.Colorful,
+		IgnoreRecordNotFoundError: config.IgnoreRecordNotFoundErr,
+		ParameterizedQueries:      config.ParameterizedQueries,
+		LogLevel:                  getLogLevel(config),
 	}
 }
 
-type LogRotationConfig struct {
-	LogFile    string `json:"logFile"`    // 文件名
-	MaxSize    int    `json:"maxSize"`    // 文件大小
-	MaxAge     int    `json:"maxAge"`     // 一个文件记录日志时长
-	MaxBackups int    `json:"maxBackups"` // 保留几份日志
-	Compress   bool   `json:"compress"`   // 是否启用压缩
-	LocalTime  bool   `json:"localTime"`  // 是否使用本地时间
+func getMaxIdleTime(config *dbv1.DbConn) time.Duration {
+	return time.Duration(config.MaxIdleTime) * time.Second
 }
 
-func (c *Config) GetDatabaseType() DatabaseType {
-	return getDBType(c.DbType)
+func getMaxIdleConnes(config *dbv1.DbConn) int {
+	return int(config.MaxIdleConnes)
 }
 
-type DatabaseType string
-
-const (
-	MySQL     DatabaseType = "mysql"
-	Postgres  DatabaseType = "postgres"
-	SQLServer DatabaseType = "sqlserver"
-	SQLite    DatabaseType = "sqlite"
-)
-
-func (db DatabaseType) String() string {
-	return string(db)
+func getMaxOpenConnes(config *dbv1.DbConn) int {
+	return int(config.MaxOpenConnes)
 }
 
-type ConnConfig struct {
-	ConnMaxLifetime int // 单位：秒
-	MaxIdleTime     int // 单位：秒
-	MaxIdleConnes   int // 最大空闲连接
-	MaxOpenConnes   int // 最大打开连接
+func getConnMaxLifetime(config *dbv1.DbConn) time.Duration {
+	return time.Duration(config.ConnMaxLifeTime) * time.Second
 }
 
-func (c *ConnConfig) GetMaxIdleTime() time.Duration {
-	return time.Duration(c.MaxIdleTime) * time.Second
-}
-
-func (c *ConnConfig) GetMaxIdleConnes() int {
-	return c.MaxIdleConnes
-}
-
-func (c *ConnConfig) GetMaxOpenConnes() int {
-	return c.MaxOpenConnes
-}
-
-func (c *ConnConfig) GetConnMaxLifetime() time.Duration {
-	return time.Duration(c.ConnMaxLifetime) * time.Second
-}
-
-type MySQLConfig struct {
-	Host         string // 数据库地址
-	User         string // 数据库用户名
-	Password     string // 数据库密码
-	DBName       string // 数据库名
-	Port         int    // 端口号
-	Charset      string // 字符集
-	Location     string // 时区
-	ConnTimeout  int    // 单位：秒
-	ReadTimeout  int    // 单位：秒
-	WriteTimeout int    // 单位：秒
-}
-
-func (m *MySQLConfig) GetDSN() string {
-	escapedLoc := url.QueryEscape(m.Location)
+func getMySqlDSN(config *dbv1.DbMysql) string {
+	escapedLoc := url.QueryEscape(config.Location)
 	const format = "%s:%s@tcp(%s:%d)/%s?parseTime=True&charset=%s&loc=%s&timeout=%v&readTimeout=%v&writeTimeout=%v"
 	return fmt.Sprintf(
 		format,
-		m.User,
-		m.Password,
-		m.Host,
-		m.Port,
-		m.DBName,
-		m.Charset,
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.DbName,
+		config.Charset,
 		escapedLoc,
-		time.Duration(m.ConnTimeout)*time.Second,
-		time.Duration(m.ReadTimeout)*time.Second,
-		time.Duration(m.WriteTimeout)*time.Second,
+		time.Duration(config.ConnTimeout)*time.Second,
+		time.Duration(config.ReadTimeout)*time.Second,
+		time.Duration(config.WriteTimeout)*time.Second,
 	)
 }
 
-type PostgresConfig struct {
-	Host     string // 数据库地址
-	User     string // 数据库用户名
-	Password string // 数据库密码
-	DBName   string // 数据库名
-	SSLMode  bool   // 是否使用ssl
-	Port     int    // 端口号
-	TimeZone string // 时区
-	Schema   string // schema
+func getPostgresSSLMode(config *dbv1.DbPostgres) string {
+	if config.SslMode {
+		return "enable"
+	}
+	return "disable"
 }
 
-func (p *PostgresConfig) GetDSN() string {
+func getPostgresDSN(config *dbv1.DbPostgres) string {
 	const format = "host=%s, user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s search_path=%s"
 	return fmt.Sprintf(
 		format,
-		p.Host,
-		p.User,
-		p.Password,
-		p.DBName,
-		p.Port,
-		p.getSSLMode(),
-		p.TimeZone,
-		p.Schema,
+		config.Host,
+		config.User,
+		config.Password,
+		config.DbName,
+		config.Port,
+		getPostgresSSLMode(config),
+		config.TimeZone,
+		config.Schema,
 	)
 }
 
-func (p *PostgresConfig) getSSLMode() string {
-	switch p.SSLMode {
-	case true:
-		return "enable"
-	case false:
-		return "disable"
-	default:
-		return "disable"
-	}
-}
-
-type SQLServerConfig struct {
-	Host     string // 数据库地址
-	User     string // 数据库用户名
-	Password string // 数据库密码
-	DBName   string // 数据库名
-	Port     int    // 端口号
-}
-
-func (s *SQLServerConfig) GetDSN() string {
+func getSQLServerDSN(config *dbv1.DbSQLServer) string {
 	const format = "sqlserver://%s:%s@%s:%d?database=%s"
 	return fmt.Sprintf(
 		format,
-		s.User,
-		s.Password,
-		s.Host,
-		s.Port,
-		s.DBName,
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.DbName,
 	)
 }
 
-type SQLiteConfig struct {
-	DBPath string
-}
-
-func (s *SQLiteConfig) GetDSN() string {
-	return s.DBPath
+func getSqliteDSN(config *dbv1.DbSQLite) string {
+	return config.DbPath
 }

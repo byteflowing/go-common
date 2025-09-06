@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bytedance/gopkg/lang/fastrand"
+	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/byteflowing/go-common/timex"
@@ -50,12 +51,12 @@ type Redis struct {
 	dailyLimitScript          *redis.Script
 }
 
-func New(c *Config) *Redis {
+func New(c *dbv1.RedisConfig) *Redis {
 	opts := &redis.Options{
 		Addr:       c.Addr,
 		ClientName: c.ClientName,
-		Protocol:   c.Protocol,
-		DB:         c.DB,
+		Protocol:   int(c.Protocol),
+		DB:         int(c.Db),
 	}
 	if len(c.User) > 0 {
 		opts.Username = c.User

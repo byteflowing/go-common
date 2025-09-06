@@ -1,6 +1,9 @@
 package idx
 
-import "github.com/sqids/sqids-go"
+import (
+	idxv1 "github.com/byteflowing/go-common/gen/idx/v1"
+	"github.com/sqids/sqids-go"
+)
 
 // ShortIDGenerator
 // 文档：https://sqids.org/go
@@ -14,11 +17,11 @@ type ShotIDGeneratorOpts struct {
 	Blocklist []string
 }
 
-func NewShortIdGenerator(opts *ShotIDGeneratorOpts) (generator *ShortIDGenerator, err error) {
+func NewShortIdGenerator(opts *idxv1.ShortIdConfig) (generator *ShortIDGenerator, err error) {
 	cli, err := sqids.New(sqids.Options{
 		Alphabet:  opts.Alphabet,
-		MinLength: opts.MinLength,
-		Blocklist: opts.Blocklist,
+		MinLength: uint8(opts.MinLength),
+		Blocklist: opts.BlockList,
 	})
 	if err != nil {
 		return nil, err

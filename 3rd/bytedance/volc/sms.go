@@ -1,8 +1,9 @@
 package volc
 
 import (
-	"strings"
+	"fmt"
 
+	smsv1 "github.com/byteflowing/go-common/gen/sms/v1"
 	"github.com/byteflowing/go-common/jsonx"
 	"github.com/volcengine/volc-sdk-golang/service/sms"
 )
@@ -16,113 +17,54 @@ type Sms struct {
 	cli             *sms.SMS
 }
 
-type SmsOpts struct {
-	AccessKeyId     string
-	AccessKeySecret string
-}
-
-func NewSms(opts *SmsOpts) *Sms {
+func NewSms(opts *smsv1.SmsProvider) *Sms {
 	cli := sms.DefaultInstance
-	cli.Client.SetAccessKey(opts.AccessKeyId)
-	cli.Client.SetSecretKey(opts.AccessKeySecret)
+	cli.Client.SetAccessKey(opts.AccessKey)
+	cli.Client.SetSecretKey(opts.SecretKey)
 	return &Sms{
-		accessKeyId:     opts.AccessKeyId,
-		accessKeySecret: opts.AccessKeySecret,
+		accessKeyId:     opts.AccessKey,
+		accessKeySecret: opts.SecretKey,
 		cli:             cli,
 	}
 }
 
-type SmsCommonResp struct {
-	RequestId string
-	Action    string
-	Version   string
-	Service   string
-	Region    string
-	ErrCode   string
-	ErrMsg    string
-}
-
-type SendSmsReq struct {
-	SmsAccount    string
-	Sign          string
-	TemplateID    string
-	TemplateParam map[string]string
-	PhoneNumber   string
-}
-
-type SendSmsResp struct {
-	*SmsCommonResp
-	MessageID string
-}
-
-type SendSmsToMultiPhoneReq struct {
-	SmsAccount    string
-	Sign          string
-	TemplateID    string
-	TemplateParam map[string]string
-	PhoneNumbers  []string
-}
-
-type SendSmsToMultiPhoneResp struct {
-	*SmsCommonResp
-	MessageID []string
-}
-
-func (s *Sms) SendSms(req *SendSmsReq) (resp *SendSmsResp, err error) {
-	params, err := jsonx.MarshalToString(req.TemplateParam)
+func (s *Sms) SendSms(req *smsv1.SendSmsReq) (resp *smsv1.SendSmsResp, err error) {
+	params, err := jsonx.MarshalToString(req.TemplateParams)
 	if err != nil {
 		return nil, err
 	}
 	res, _, err := s.cli.Send(&sms.SmsRequest{
-		SmsAccount:    req.SmsAccount,
-		Sign:          req.Sign,
-		TemplateID:    req.TemplateID,
+		SmsAccount:    req.Account,
+		Sign:          req.SignName,
+		TemplateID:    req.TemplateCode,
 		TemplateParam: params,
-		PhoneNumbers:  req.PhoneNumber,
+		PhoneNumbers:  req.PhoneNumber.Number,
 	})
+	err = s.parseErr(res, err)
 	if err != nil {
 		return nil, err
 	}
-	commonResp := &SmsCommonResp{
-		RequestId: res.ResponseMetadata.RequestId,
-		Action:    res.ResponseMetadata.Action,
-		Version:   res.ResponseMetadata.Version,
-		Service:   res.ResponseMetadata.Service,
-		Region:    res.ResponseMetadata.Region,
-	}
-	resp = &SendSmsResp{
-		SmsCommonResp: commonResp,
-		MessageID:     res.Result.MessageID[0],
+	resp = &smsv1.SendSmsResp{
+		ErrMsg: "OK",
 	}
 	return
 }
 
-func (s *Sms) SendSmsToMultiPhone(req *SendSmsToMultiPhoneReq) (resp *SendSmsToMultiPhoneResp, err error) {
-	phones := strings.Join(req.PhoneNumbers, ",")
-	params, err := jsonx.MarshalToString(req.TemplateParam)
+func (s *Sms) parseErr(resp *sms.SmsResponse, err error) error {
 	if err != nil {
-		return nil, err
+		if resp != nil {
+			return fmt.Errorf(
+				"requestID: %s, action: %s, version: %s, service: %s, region: %s, messageID: %v, err: %v",
+				resp.ResponseMetadata.RequestId,
+				resp.ResponseMetadata.Action,
+				resp.ResponseMetadata.Version,
+				resp.ResponseMetadata.Service,
+				resp.ResponseMetadata.Region,
+				resp.Result.MessageID,
+				err,
+			)
+		}
+		return err
 	}
-	res, _, err := s.cli.Send(&sms.SmsRequest{
-		SmsAccount:    req.SmsAccount,
-		Sign:          req.Sign,
-		TemplateID:    req.TemplateID,
-		TemplateParam: params,
-		PhoneNumbers:  phones,
-	})
-	if err != nil {
-		return nil, err
-	}
-	commonResp := &SmsCommonResp{
-		RequestId: res.ResponseMetadata.RequestId,
-		Action:    res.ResponseMetadata.Action,
-		Version:   res.ResponseMetadata.Version,
-		Service:   res.ResponseMetadata.Service,
-		Region:    res.ResponseMetadata.Region,
-	}
-	resp = &SendSmsToMultiPhoneResp{
-		SmsCommonResp: commonResp,
-		MessageID:     res.Result.MessageID,
-	}
-	return
+	return nil
 }

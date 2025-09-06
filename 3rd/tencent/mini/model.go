@@ -5,19 +5,11 @@ type CommonResp struct {
 	ErrMsg  string `json:"errmsg"`
 }
 
-type WechatLoginReq struct {
-	Code string
-}
-
 type WechatLoginResp struct {
 	CommonResp // 调用者不用关心这个结构
 	OpenID     string
 	SessionKey string
 	UnionID    string
-}
-
-type GetAccessTokenReq struct {
-	ForceRefresh bool
 }
 
 type GetAccessTokenResp struct {
@@ -31,12 +23,6 @@ type GetStableAccessTokenBody struct {
 	AppID        string `json:"appid"`
 	Secret       string `json:"secret"`
 	ForceRefresh bool   `json:"force_refresh"`
-}
-
-type ResetSessionReq struct {
-	AccessToken string
-	OpenID      string
-	SessionKey  string
 }
 
 type ResetSessionResp struct {
@@ -60,12 +46,6 @@ type PhoneInfo struct {
 	PurePhoneNumber string     `json:"purePhoneNumber"` // 没有区号的手机号
 	CountryCode     string     `json:"countryCode"`     // 区号
 	Watermark       *WaterMark `json:"watermark"`       // 数据水印
-}
-
-type GetPhoneNumberReq struct {
-	AccessToken string  `json:"access_token"`
-	Code        string  `json:"code"`
-	OpenID      *string `json:"openid"` // 可选用户openid
 }
 
 type GetPhoneNumberResp struct {

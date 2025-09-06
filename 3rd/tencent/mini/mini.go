@@ -10,8 +10,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
+	wechatv1 "github.com/byteflowing/go-common/gen/wechat/v1"
 	"github.com/byteflowing/go-common/jsonx"
+	"github.com/byteflowing/go-common/trans"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -34,14 +38,9 @@ type Client struct {
 	httpClient *http.Client
 }
 
-type Opts struct {
-	AppID  string // 小程序 appId
-	Secret string // 小程序 appSecret
-}
-
-func NewMiniClient(opts *Opts) *Client {
+func NewMiniClient(opts *wechatv1.WechatCredential) *Client {
 	return &Client{
-		AppID:      opts.AppID,
+		AppID:      opts.Appid,
 		Secret:     opts.Secret,
 		httpClient: http.DefaultClient,
 	}
@@ -49,7 +48,7 @@ func NewMiniClient(opts *Opts) *Client {
 
 // WechatLogin 小程序登录
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/code2Session.html
-func (mini *Client) WechatLogin(ctx context.Context, req *WechatLoginReq) (resp *WechatLoginResp, err error) {
+func (mini *Client) WechatLogin(ctx context.Context, req *wechatv1.WechatSignInReq) (resp *WechatLoginResp, err error) {
 	params := url.Values{}
 	params.Add("js_code", req.Code)
 	params.Add("appid", mini.AppID)
@@ -73,7 +72,7 @@ func (mini *Client) WechatLogin(ctx context.Context, req *WechatLoginReq) (resp 
 // GetAccessToken : 获取接口调用凭据
 // 建议优先使用GetStableAccessToken接口
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-access-token/getAccessToken.html
-func (mini *Client) GetAccessToken(ctx context.Context, _ *GetAccessTokenReq) (resp *GetAccessTokenResp, err error) {
+func (mini *Client) GetAccessToken(ctx context.Context, _ *wechatv1.WechatGetAccessTokenReq) (resp *wechatv1.WechatGetAccessTokenResp, err error) {
 	params := url.Values{}
 	params.Add("appid", mini.AppID)
 	params.Add("secret", mini.Secret)
@@ -83,12 +82,16 @@ func (mini *Client) GetAccessToken(ctx context.Context, _ *GetAccessTokenReq) (r
 	if err != nil {
 		return nil, err
 	}
-	resp = &GetAccessTokenResp{}
-	if err = jsonx.Unmarshal(body, resp); err != nil {
+	res := &GetAccessTokenResp{}
+	if err = jsonx.Unmarshal(body, res); err != nil {
 		return nil, err
 	}
-	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+	if err = mini.checkWechatErr(res.ErrCode, res.ErrMsg); err != nil {
 		return nil, err
+	}
+	resp = &wechatv1.WechatGetAccessTokenResp{
+		AccessToken: res.AccessToken,
+		Expiration:  timestamppb.New(time.Unix(int64(res.ExpiresIn), 0)),
 	}
 	return
 }
@@ -97,12 +100,12 @@ func (mini *Client) GetAccessToken(ctx context.Context, _ *GetAccessTokenReq) (r
 // 与GetAccessToken的区别是：1. 接口允许调用次数比较多 2.在过期前每次调用返回的token都一样(force_refresh:false) 3.小项目可以直接每次调用该接口获取token，免去部署中心服务
 // 建议还是存在redis或者本地缓存中，把过期时间设置为过期前五分钟，然后重新获取
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/mp-access-token/getStableAccessToken.html
-func (mini *Client) GetStableAccessToken(ctx context.Context, req *GetAccessTokenReq) (resp *GetAccessTokenResp, err error) {
+func (mini *Client) GetStableAccessToken(ctx context.Context, req *wechatv1.WechatGetAccessTokenReq) (resp *wechatv1.WechatGetAccessTokenResp, err error) {
 	body := &GetStableAccessTokenBody{
 		GrantType:    accessTokenGrantType,
 		AppID:        mini.AppID,
 		Secret:       mini.Secret,
-		ForceRefresh: req.ForceRefresh,
+		ForceRefresh: req.ForceFresh,
 	}
 	bodyBytes, err := jsonx.Marshal(body)
 	if err != nil {
@@ -112,12 +115,16 @@ func (mini *Client) GetStableAccessToken(ctx context.Context, req *GetAccessToke
 	if err != nil {
 		return nil, err
 	}
-	resp = &GetAccessTokenResp{}
+	res := &GetAccessTokenResp{}
 	if err = jsonx.Unmarshal(respBody, resp); err != nil {
 		return nil, err
 	}
-	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+	if err = mini.checkWechatErr(res.ErrCode, res.ErrMsg); err != nil {
 		return nil, err
+	}
+	resp = &wechatv1.WechatGetAccessTokenResp{
+		AccessToken: res.AccessToken,
+		Expiration:  timestamppb.New(time.Unix(int64(res.ExpiresIn), 0)),
 	}
 	return
 }
@@ -148,11 +155,11 @@ func (mini *Client) CheckLoginStatus(ctx context.Context, accessToken, sessionKe
 
 // ResetSessionKey 重置登录态
 // 文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/user-login/ResetUserSessionKey.html
-func (mini *Client) ResetSessionKey(ctx context.Context, req *ResetSessionReq) (resp *ResetSessionResp, err error) {
+func (mini *Client) ResetSessionKey(ctx context.Context, req *wechatv1.WechatResetSessionKeyReq) (resp *wechatv1.WechatResetSessionKeyResp, err error) {
 	signature := mini.signSessionKey(req.SessionKey)
 	params := url.Values{}
 	params.Add("access_token", req.AccessToken)
-	params.Add("openid", req.OpenID)
+	params.Add("openid", req.Openid)
 	params.Add("signature", signature)
 	params.Add("sig_method", sigMethodHMACSHA256)
 	reqURL := fmt.Sprintf("%s?%s", resetSessionKeyURL, params.Encode())
@@ -160,23 +167,27 @@ func (mini *Client) ResetSessionKey(ctx context.Context, req *ResetSessionReq) (
 	if err != nil {
 		return nil, err
 	}
-	resp = &ResetSessionResp{}
+	res := &ResetSessionResp{}
 	if err = jsonx.Unmarshal(body, resp); err != nil {
 		return nil, err
 	}
-	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+	if err = mini.checkWechatErr(res.ErrCode, res.ErrMsg); err != nil {
 		return nil, err
+	}
+	resp = &wechatv1.WechatResetSessionKeyResp{
+		Openid:     res.OpenID,
+		SessionKey: res.SessionKey,
 	}
 	return
 }
 
-func (mini *Client) GetPhoneNumber(ctx context.Context, req *GetPhoneNumberReq) (resp *GetPhoneNumberResp, err error) {
+func (mini *Client) GetPhoneNumber(ctx context.Context, req *wechatv1.WechatGetPhoneNumberReq) (resp *wechatv1.WechatGetPhoneNumberResp, err error) {
 	params := url.Values{}
 	params.Add("access_token", req.AccessToken)
 	_url := fmt.Sprintf("%s?%s", getPhoneNumberURL, params.Encode())
 	body := &GetPhoneNumberBody{
 		Code:   req.Code,
-		OpenID: req.OpenID,
+		OpenID: trans.String(req.Openid),
 	}
 	bodyBytes, err := jsonx.Marshal(body)
 	if err != nil {
@@ -186,12 +197,17 @@ func (mini *Client) GetPhoneNumber(ctx context.Context, req *GetPhoneNumberReq) 
 	if err != nil {
 		return nil, err
 	}
-	resp = &GetPhoneNumberResp{}
+	res := &GetPhoneNumberResp{}
 	if err = jsonx.Unmarshal(respBody, resp); err != nil {
 		return nil, err
 	}
-	if err = mini.checkWechatErr(resp.ErrCode, resp.ErrMsg); err != nil {
+	if err = mini.checkWechatErr(res.ErrCode, res.ErrMsg); err != nil {
 		return nil, err
+	}
+	resp = &wechatv1.WechatGetPhoneNumberResp{
+		PhoneNumber:     res.PhoneInfo.PhoneNumber,
+		PurePhoneNumber: res.PhoneInfo.PurePhoneNumber,
+		CountryCode:     res.PhoneInfo.CountryCode,
 	}
 	return
 }

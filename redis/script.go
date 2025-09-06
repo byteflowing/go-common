@@ -28,25 +28,6 @@ const incrWithExpireLua = `
 	return current
 `
 
-const slidingWindowLua = `
-for i = 1, #KEYS do
-	local key = KEYS[i]
-	local duration = tonumber(ARGV[(i - 1) * 2 + 1])
-	local limit = tonumber(ARGV[(i - 1) * 2 + 2])
-	local cnt = redis.call("INCR", key)
-	if cnt == 1 then
-		redis.call("EXPIRE", key, duration)
-	end
-	if cnt > limit then
-		local ttl = redis.call("TTL", key)
-		if ttl >= 0 then
-			return {100 + (i - 1), ttl}
-		end
-	end
-end
-return {1, 0}
-`
-
 const allowFixedLimitLua = `
 	-- KEYS[1] = 限流 key（如 user:123:api:send_code）
 	-- ARGV[1] = 限流周期（秒）

@@ -3,41 +3,44 @@ package orm
 import (
 	"gorm.io/gorm"
 	"gorm.io/rawsql"
+
+	dbv1 "github.com/byteflowing/go-common/gen/db/v1"
+	enumv1 "github.com/byteflowing/go-common/gen/enums/v1"
 )
 
-func New(c *Config) *gorm.DB {
+func New(c *dbv1.DbConfig) *gorm.DB {
 	var db *gorm.DB
-	switch c.GetDatabaseType() {
-	case MySQL:
+	switch c.DbType {
+	case enumv1.DbType_DB_TYPE_MYSQL:
 		db = initMySQL(c)
-	case Postgres:
+	case enumv1.DbType_DB_TYPE_POSTGRES:
 		db = initPostgres(c)
-	case SQLServer:
+	case enumv1.DbType_DB_TYPE_SQLSERVER:
 		db = initSQLServer(c)
-	case SQLite:
+	case enumv1.DbType_DB_TYPE_SQLITE:
 		db = initSQLite(c)
 	default:
-		panic("unknown database type:" + c.DbType)
+		panic("unknown database type:" + c.DbType.String())
 	}
-	if c.GetDatabaseType() != SQLite && c.Conn != nil {
+	if c.DbType != enumv1.DbType_DB_TYPE_SQLITE && c.Conn != nil {
 		sqlDb, err := db.DB()
 		if err != nil {
 			panic(err)
 		}
-		sqlDb.SetConnMaxIdleTime(c.Conn.GetMaxIdleTime())
-		sqlDb.SetConnMaxLifetime(c.Conn.GetConnMaxLifetime())
-		sqlDb.SetMaxIdleConns(c.Conn.GetMaxIdleConnes())
-		sqlDb.SetMaxOpenConns(c.Conn.GetMaxOpenConnes())
+		sqlDb.SetConnMaxIdleTime(getMaxIdleTime(c.Conn))
+		sqlDb.SetConnMaxLifetime(getConnMaxLifetime(c.Conn))
+		sqlDb.SetMaxIdleConns(getMaxIdleConnes(c.Conn))
+		sqlDb.SetMaxOpenConns(getMaxOpenConnes(c.Conn))
 	}
 	return db
 }
 
 // NewBySQL 通过SQL创建db,主要用于gen生成struct
-func NewBySQL(c *SQLConfig) *gorm.DB {
+func NewBySQL(c *dbv1.SqlConfig) *gorm.DB {
 	conf := rawsql.Config{
-		DriverName: string(getDBType(c.DBType)),
+		DriverName: getDBType(c.DbType),
 		FilePath:   c.FilePath,
-		SQL:        c.SQL,
+		SQL:        c.Sql,
 	}
 	gormDB, err := gorm.Open(rawsql.New(conf))
 	if err != nil {
@@ -46,19 +49,17 @@ func NewBySQL(c *SQLConfig) *gorm.DB {
 	return gormDB
 }
 
-func getDBType(t string) DatabaseType {
-	var dbType DatabaseType
+func getDBType(t enumv1.DbType) string {
 	switch t {
-	case "mysql", "":
-		dbType = MySQL
-	case "postgres":
-		dbType = Postgres
-	case "sqlserver":
-		dbType = SQLServer
-	case "sqlite":
-		dbType = SQLite
+	case enumv1.DbType_DB_TYPE_MYSQL:
+		return "mysql"
+	case enumv1.DbType_DB_TYPE_POSTGRES:
+		return "postgres"
+	case enumv1.DbType_DB_TYPE_SQLSERVER:
+		return "sqlserver"
+	case enumv1.DbType_DB_TYPE_SQLITE:
+		return "sqlite"
 	default:
-		panic("unknown database type:" + t)
+		panic("unknown database type:" + t.String())
 	}
-	return dbType
 }
