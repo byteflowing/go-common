@@ -77,7 +77,7 @@ func (s *SignalListener) Listen() {
 		log.Printf("[signalx] received second signal: %v, force kill", sig2)
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
 	case <-time.After(s.waitDuration):
-		log.Printf("[signalx] timeout after %v secods, force kill", s.waitDuration)
+		log.Printf("[signalx] timeout after %v secods, force kill", s.waitDuration.Seconds())
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
 	}
 }
