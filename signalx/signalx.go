@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -19,37 +18,40 @@ type SignalHandler interface {
 type SignalListener struct {
 	handlers []SignalHandler
 	funcs    []func()
-	mux      sync.Mutex
+
+	waitDuration time.Duration
 }
 
-func NewSignalListener() *SignalListener {
-	return &SignalListener{}
+func NewSignalListener(wait time.Duration) *SignalListener {
+	return &SignalListener{
+		waitDuration: wait,
+	}
 }
 
 func (s *SignalListener) Register(handler SignalHandler) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
 	s.handlers = append(s.handlers, handler)
 }
 
 func (s *SignalListener) RegisterFunc(stop func()) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
 	s.funcs = append(s.funcs, stop)
 }
 
 func (s *SignalListener) Listen() {
-	startGroup := service.NewRoutineGroup()
 	for _, handler := range s.handlers {
 		h := handler
-		startGroup.Run(func() {
+		go func() {
 			h.Start()
-		})
+		}()
 	}
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer func() {
+		signal.Stop(sigCh)
+		close(sigCh)
+	}()
+
 	sig := <-sigCh
-	log.Println("signalx: received signal: ", sig)
+	log.Printf("[signalx] received signal: %v", sig)
 	stopGroup := service.NewRoutineGroup()
 	for _, handler := range s.handlers {
 		h := handler
@@ -65,20 +67,17 @@ func (s *SignalListener) Listen() {
 	}
 	done := make(chan struct{})
 	go func() {
-		startGroup.Wait()
+		stopGroup.Wait()
 		close(done)
 	}()
 	select {
 	case <-done:
-		stopGroup.Wait()
-		signal.Stop(sigCh)
-		close(sigCh)
-		log.Println("signalx: stopped")
+		log.Printf("[signalx] stopped gracefully")
 	case sig2 := <-sigCh:
-		log.Printf("signalx: received second signal: %v, force kill", sig2)
+		log.Printf("[signalx] received second signal: %v, force kill", sig2)
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
-	case <-time.After(30 * time.Second):
-		log.Printf("signalx: timeout after 30 seconds, force kill")
+	case <-time.After(s.waitDuration):
+		log.Printf("[signalx] timeout after %v secods, force kill", s.waitDuration)
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGKILL)
 	}
 }
