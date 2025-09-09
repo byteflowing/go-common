@@ -10,7 +10,7 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/bytedance/gopkg v0.1.3
 	github.com/bytedance/sonic v1.14.1
-	github.com/byteflowing/proto v0.0.0-20250906125756-b11d32d85143
+	github.com/byteflowing/proto v0.0.0-20250909070118-5f6ac18ed429
 	github.com/coocood/freecache v1.2.4
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.13.0
@@ -23,6 +23,7 @@ require (
 	github.com/volcengine/ve-tos-golang-sdk/v2 v2.7.21
 	github.com/volcengine/volc-sdk-golang v1.0.219
 	github.com/wneessen/go-mail v0.6.2
+	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
 	golang.org/x/time v0.12.0
 	google.golang.org/protobuf v1.36.8
@@ -31,7 +32,7 @@ require (
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/driver/sqlserver v1.6.1
-	gorm.io/gorm v1.30.2
+	gorm.io/gorm v1.30.5
 	gorm.io/rawsql v1.0.2
 )
 
@@ -88,12 +89,11 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

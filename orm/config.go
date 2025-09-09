@@ -16,9 +16,9 @@ import (
 
 func getLogWriter(config *dbv1.DbLog) io.Writer {
 	switch config.Out {
-	case enumv1.DbLogOut_DB_LOG_OUT_STDOUT:
+	case enumv1.LogOut_LOG_OUT_STDOUT:
 		return os.Stdout
-	case enumv1.DbLogOut_DB_LOG_OUT_FILE:
+	case enumv1.LogOut_LOG_OUT_FILE:
 		return rotation.NewRotation(config.Rotation)
 	default:
 		return os.Stdout
