@@ -4,10 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"go.uber.org/zap"
-
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
+	"go.uber.org/zap"
 )
 
 var (

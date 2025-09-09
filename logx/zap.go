@@ -39,11 +39,9 @@ func newZap(config *logv1.LogConfig) *zap.Logger {
 
 func getOptions(config *logv1.LogConfig) []zap.Option {
 	var opts []zap.Option
-	if config.ReportCaller {
-		opts = append(opts, zap.AddCaller())
-		opts = append(opts, zap.AddCallerSkip(int(config.CallerSkip)))
-		opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(convertLogLevel(config.AddStackTraceLevel))))
-	}
+	opts = append(opts, zap.WithCaller(config.ReportCaller))
+	opts = append(opts, zap.AddCallerSkip(int(config.CallerSkip)))
+	opts = append(opts, zap.AddStacktrace(zap.NewAtomicLevelAt(convertLogLevel(config.AddStackTraceLevel))))
 	return opts
 }
 
@@ -84,6 +82,12 @@ func getConfig(config *logv1.LogConfig) zap.Config {
 	encoderCfg := getEncoderConfig(config)
 	cfg.Level.SetLevel(convertLogLevel(config.Level))
 	cfg.EncoderConfig = encoderCfg
+	switch config.Format {
+	case enumv1.LogFormat_LOG_FORMAT_CONSOLE:
+		cfg.Encoding = "console"
+	case enumv1.LogFormat_LOG_FORMAT_JSON:
+		cfg.Encoding = "json"
+	}
 	return cfg
 }
 
@@ -94,12 +98,10 @@ func getEncoderConfig(config *logv1.LogConfig) zapcore.EncoderConfig {
 	} else {
 		cfg = zap.NewProductionEncoderConfig()
 	}
-	if config.ReportCaller {
-		if config.ShortCaller {
-			cfg.EncodeCaller = zapcore.ShortCallerEncoder
-		} else {
-			cfg.EncodeCaller = zapcore.FullCallerEncoder
-		}
+	if config.ShortCaller {
+		cfg.EncodeCaller = zapcore.ShortCallerEncoder
+	} else {
+		cfg.EncodeCaller = zapcore.FullCallerEncoder
 	}
 	cfg.NameKey = defaultNameKey
 	if config.Keys != nil {

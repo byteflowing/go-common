@@ -2,7 +2,6 @@ package logx
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/byteflowing/go-common/idx"
@@ -14,7 +13,7 @@ func TestLogger_MultiOutputLevels(t *testing.T) {
 	c := &logv1.LogConfig{
 		Mode:               enumv1.LogMode_LOG_MODE_DEV,
 		Format:             enumv1.LogFormat_LOG_FORMAT_CONSOLE,
-		ReportCaller:       false,
+		ReportCaller:       true,
 		ShortCaller:        true,
 		CallerSkip:         1,
 		ServiceName:        "user",
@@ -34,12 +33,12 @@ func TestLogger_MultiOutputLevels(t *testing.T) {
 		//},
 	}
 	Init(c)
-	fmt.Println(std.Level())
-	Debug("std debug")
-	Info("std info")
-	Warn("std warn")
-	Error("std error")
-
+	//fmt.Println(std.Level())
+	//Debug("std debug")
+	//Info("std info")
+	//Warn("std warn")
+	//Error("std error")
+	//
 	logid := idx.UUIDv4()
 	ctx := WithLogID(context.Background(), logid)
 	CtxDebug(ctx, "debug")
@@ -48,7 +47,6 @@ func TestLogger_MultiOutputLevels(t *testing.T) {
 	CtxError(ctx, "error")
 	CtxFatal(ctx, "fatal")
 
-	//c.CallerSkip = 0
 	//logger := newZap(c)
 	//logger.Debug("debug message")
 	//logger.Info("info message")
