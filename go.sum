@@ -159,8 +159,8 @@ github.com/bytedance/sonic v1.14.1 h1:FBMC0zVz5XUmE4z9wF4Jey0An5FueFvOsTKKKtwIl7
 github.com/bytedance/sonic v1.14.1/go.mod h1:gi6uhQLMbTdeP0muCnrjHLeCUPyb70ujhnNlhOylAFc=
 github.com/bytedance/sonic/loader v0.3.0 h1:dskwH8edlzNMctoruo8FPTJDF3vLtDT0sXZwvZJyqeA=
 github.com/bytedance/sonic/loader v0.3.0/go.mod h1:N8A3vUdtUebEY2/VQC0MyhYeKUFosQU6FxH2JmUe6VI=
-github.com/byteflowing/proto v0.0.0-20250909142355-a2c1851fb15f h1:DBjxmbW/CKliEVbPrVzUviW6ZeWnMwuPs/Cz1NYbUJU=
-github.com/byteflowing/proto v0.0.0-20250909142355-a2c1851fb15f/go.mod h1:vGWu87ZwKNBYmreWgW6B20HHE6PMGJeb3McTVdRGAM8=
+github.com/byteflowing/proto v0.0.0-20250909154438-78b19a08d249 h1:Qv9VzkNytWRt/8aLrlHK0qnsfbmy7OMyJl2S1PZztks=
+github.com/byteflowing/proto v0.0.0-20250909154438-78b19a08d249/go.mod h1:vGWu87ZwKNBYmreWgW6B20HHE6PMGJeb3McTVdRGAM8=
 github.com/casbin/casbin/v2 v2.37.0/go.mod h1:vByNa/Fchek0KZUgG5wEsl7iFsiviAYKRtgrQfcJqHg=
 github.com/cenkalti/backoff/v4 v4.1.1/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
 github.com/cenkalti/backoff/v4 v4.1.2/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
