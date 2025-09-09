@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	serviceKey = "service"
+	defaultNameKey = "SRV"
 )
 
 func newZap(config *logv1.LogConfig) *zap.Logger {
@@ -101,7 +101,15 @@ func getEncoderConfig(config *logv1.LogConfig) zapcore.EncoderConfig {
 			cfg.EncodeCaller = zapcore.FullCallerEncoder
 		}
 	}
-	cfg.NameKey = serviceKey
+	cfg.NameKey = defaultNameKey
+	if config.Keys != nil {
+		cfg.LevelKey = config.Keys.LevelKey
+		cfg.MessageKey = config.Keys.MessageKey
+		cfg.TimeKey = config.Keys.TimeKey
+		cfg.CallerKey = config.Keys.CallerKey
+		cfg.StacktraceKey = config.Keys.StackTraceKey
+		cfg.FunctionKey = config.Keys.FunctionKey
+	}
 	cfg.EncodeTime = zapcore.ISO8601TimeEncoder
 	cfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	return cfg
