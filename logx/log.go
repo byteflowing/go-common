@@ -20,17 +20,25 @@ type StdConfig struct {
 	LogIdKey    string
 }
 
-func WithLogID(ctx context.Context, logID string) context.Context {
+func CtxWithLogID(ctx context.Context, logID string) context.Context {
 	return context.WithValue(ctx, stdConfig.CtxLogIdKey, logID)
 }
 
-func GetLogID(ctx context.Context) string {
+func GetCtxLogID(ctx context.Context) string {
 	if stdConfig != nil && stdConfig.CtxLogIdKey != "" {
 		if v, ok := ctx.Value(stdConfig.CtxLogIdKey).(string); ok {
 			return v
 		}
 	}
 	return ""
+}
+
+func StdWithLogID(logID string) *zap.Logger {
+	return std.With(zap.String(stdConfig.LogIdKey, logID))
+}
+
+func WithLogID(logger *zap.Logger, logIdKey, logID string) *zap.Logger {
+	return logger.With(zap.String(logIdKey, logIdKey))
 }
 
 // Init CallerSkip设置为1刚好可以显示记录日志的那行代码
@@ -101,41 +109,43 @@ func Fatal(msg string, fields ...zap.Field) {
 }
 
 func CtxDebug(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Debug(msg, fs...)
 }
 
 func CtxInfo(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Info(msg, fs...)
 }
 
 func CtxWarn(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Warn(msg, fs...)
 }
 
 func CtxError(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Error(msg, fs...)
 }
 
 func CtxPanic(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Panic(msg, fs...)
 }
 
 func CtxFatal(ctx context.Context, msg string, fields ...zap.Field) {
-	fs := addLogIdToFields(ctx, fields...)
+	fs := addLogIdToFields(ctx, fields)
 	std.Fatal(msg, fs...)
 }
 
-func addLogIdToFields(ctx context.Context, fields ...zap.Field) []zap.Field {
-	logId := GetLogID(ctx)
-	logFieldName := stdConfig.LogIdKey
-	if logId == "" || logFieldName == "" {
+func addLogIdToFields(ctx context.Context, fields []zap.Field) []zap.Field {
+	logId := GetCtxLogID(ctx)
+	logIdKey := stdConfig.LogIdKey
+	if logId == "" || logIdKey == "" {
 		return fields
 	}
-	fields = append(fields, zap.String(logFieldName, logId))
-	return fields
+	newFields := make([]zap.Field, 0, len(fields)+1)
+	newFields = append(newFields, zap.String(logIdKey, logId))
+	newFields = append(newFields, fields...)
+	return newFields
 }

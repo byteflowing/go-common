@@ -7,6 +7,7 @@ import (
 	"github.com/byteflowing/go-common/idx"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
+	"go.uber.org/zap"
 )
 
 func TestLogger_MultiOutputLevels(t *testing.T) {
@@ -40,12 +41,15 @@ func TestLogger_MultiOutputLevels(t *testing.T) {
 	//Error("std error")
 	//
 	logid := idx.UUIDv4()
-	ctx := WithLogID(context.Background(), logid)
-	CtxDebug(ctx, "debug")
-	CtxInfo(ctx, "info")
-	CtxWarn(ctx, "warn")
-	CtxError(ctx, "error")
-	CtxFatal(ctx, "fatal")
+	ctx := CtxWithLogID(context.Background(), logid)
+	CtxDebug(ctx, "debug1", zap.String("key1", "value1"))
+	CtxDebug(ctx, "debug2", zap.String("key2", "value2"))
+	CtxDebug(ctx, "debug3", zap.String("key2", "value2"))
+	CtxDebug(ctx, "debug4", zap.String("key2", "value2"))
+	//CtxInfo(ctx, "info")
+	//CtxWarn(ctx, "warn")
+	//CtxError(ctx, "error")
+	//CtxFatal(ctx, "fatal")
 
 	//logger := newZap(c)
 	//logger.Debug("debug message")
