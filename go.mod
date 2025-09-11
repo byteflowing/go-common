@@ -10,7 +10,7 @@ require (
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/bytedance/gopkg v0.1.3
 	github.com/bytedance/sonic v1.14.1
-	github.com/byteflowing/proto v0.0.0-20250911022113-bd78535db755
+	github.com/byteflowing/proto v0.0.0-20250911072613-8d3a3f0fc156
 	github.com/coocood/freecache v1.2.4
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.14.0
