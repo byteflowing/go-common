@@ -65,6 +65,22 @@ func IsCodes(err error) (Codes, bool) {
 	return nil, false
 }
 
+func FromCode(code uint32) Codes {
+	c, ok := _codes[code]
+	if !ok {
+		return nil
+	}
+	return c
+}
+
+func FromMsg(msg string) Codes {
+	m, ok := _errMsg[msg]
+	if !ok {
+		return nil
+	}
+	return m
+}
+
 func add(errCode uint32, errMsg string) *Code {
 	if _, ok := _codes[errCode]; ok {
 		panic(fmt.Sprintf("code: %d already exist", errCode))

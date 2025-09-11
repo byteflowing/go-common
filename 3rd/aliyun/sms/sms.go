@@ -58,12 +58,6 @@ func (s *Sms) SendSms(req *smsv1.SendSmsReq) (resp *smsv1.SendSmsResp, err error
 		return nil, errors.New("response is nil")
 	}
 	err = s.parseErr(res.Body.BizId, res.Body.RequestId, res.Body.Code, res.Body.Message)
-	if err != nil {
-		return nil, err
-	}
-	resp = &smsv1.SendSmsResp{
-		ErrMsg: "OK",
-	}
 	return
 }
 

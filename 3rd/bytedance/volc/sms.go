@@ -41,12 +41,6 @@ func (s *Sms) SendSms(req *smsv1.SendSmsReq) (resp *smsv1.SendSmsResp, err error
 		PhoneNumbers:  req.PhoneNumber.Number,
 	})
 	err = s.parseErr(res, err)
-	if err != nil {
-		return nil, err
-	}
-	resp = &smsv1.SendSmsResp{
-		ErrMsg: "OK",
-	}
 	return
 }
 
