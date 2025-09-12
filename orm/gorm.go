@@ -4,11 +4,11 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/rawsql"
 
-	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 )
 
-func New(c *dbv1.DbConfig) *gorm.DB {
+func New(c *configv1.DbConfig) *gorm.DB {
 	var db *gorm.DB
 	switch c.DbType {
 	case enumv1.DbType_DB_TYPE_MYSQL:
@@ -36,7 +36,7 @@ func New(c *dbv1.DbConfig) *gorm.DB {
 }
 
 // NewBySQL 通过SQL创建db,主要用于gen生成struct
-func NewBySQL(c *dbv1.SqlConfig) *gorm.DB {
+func NewBySQL(c *configv1.SqlConfig) *gorm.DB {
 	conf := rawsql.Config{
 		DriverName: getDBType(c.DbType),
 		FilePath:   c.FilePath,

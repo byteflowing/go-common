@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/byteflowing/go-common/idx"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
-	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
 	"go.uber.org/zap"
 )
 
 func TestLogger_MultiOutputLevels(t *testing.T) {
-	c := &logv1.LogConfig{
+	c := &configv1.ZapLogConfig{
 		Mode:               enumv1.LogMode_LOG_MODE_DEV,
 		Format:             enumv1.LogFormat_LOG_FORMAT_CONSOLE,
 		ReportCaller:       true,

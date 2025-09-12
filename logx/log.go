@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
-	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
 	"go.uber.org/zap"
 )
 
@@ -42,7 +42,7 @@ func WithLogID(logger *zap.Logger, logIdKey, logID string) *zap.Logger {
 }
 
 // Init CallerSkip设置为1刚好可以显示记录日志的那行代码
-func Init(config *logv1.LogConfig) {
+func Init(config *configv1.ZapLogConfig) {
 	once.Do(func() {
 		std = newZap(config)
 		stdConfig = &StdConfig{
@@ -53,7 +53,7 @@ func Init(config *logv1.LogConfig) {
 }
 
 func init() {
-	defaultConfig := &logv1.LogConfig{
+	defaultConfig := &configv1.ZapLogConfig{
 		Mode:               enumv1.LogMode_LOG_MODE_DEV,
 		Format:             enumv1.LogFormat_LOG_FORMAT_CONSOLE,
 		Level:              enumv1.LogLevel_LOG_LEVEL_INFO,
@@ -72,7 +72,7 @@ func init() {
 	stdConfig = &StdConfig{}
 }
 
-func NewZapLogger(config *logv1.LogConfig) *zap.Logger {
+func NewZapLogger(config *configv1.ZapLogConfig) *zap.Logger {
 	return newZap(config)
 }
 

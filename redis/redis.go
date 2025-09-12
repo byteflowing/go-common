@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"time"
@@ -10,7 +11,8 @@ import (
 	"github.com/byteflowing/go-common/idx"
 	"github.com/byteflowing/go-common/syncx"
 	"github.com/byteflowing/go-common/timex"
-	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
+	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -51,24 +53,33 @@ type Redis struct {
 	dailyLimitScript          *redis.Script
 }
 
-func New(c *dbv1.RedisConfig) *Redis {
-	opts := &redis.Options{
-		Addr:       c.Addr,
-		ClientName: c.ClientName,
-		Protocol:   int(c.Protocol),
-		DB:         int(c.Db),
+func New(c *configv1.RedisConfig) *Redis {
+	r := &Redis{}
+	if c.Type == enumv1.RedisType_REDIS_TYPE_NODE {
+		opts := &redis.Options{
+			Addr:       c.Host[0],
+			ClientName: c.ClientName,
+			Protocol:   int(c.Protocol),
+			DB:         int(c.Db),
+			TLSConfig:  &tls.Config{InsecureSkipVerify: !c.Tls},
+		}
+		if len(c.Password) > 0 {
+			opts.Password = c.Password
+		}
+		r.Cmdable = redis.NewClient(opts)
+	} else if c.Type == enumv1.RedisType_REDIS_TYPE_CLUSTER {
+		opts := &redis.ClusterOptions{
+			Addrs:      c.Host,
+			ClientName: c.ClientName,
+			Password:   c.Password,
+			Protocol:   int(c.Protocol),
+			TLSConfig:  &tls.Config{InsecureSkipVerify: !c.Tls},
+		}
+		r.Cmdable = redis.NewClusterClient(opts)
 	}
-	if len(c.User) > 0 {
-		opts.Username = c.User
-	}
-	if len(c.Password) > 0 {
-		opts.Password = c.Password
-	}
-	rdb := redis.NewClient(opts)
-	if err := rdb.Ping(context.Background()).Err(); err != nil {
+	if err := r.Cmdable.Ping(context.Background()).Err(); err != nil {
 		panic("connecting to redis failed:" + err.Error())
 	}
-	r := &Redis{Cmdable: rdb}
 	r.initUnLockScript = syncx.Once(func() { r.unLockScript = redis.NewScript(unLockLua) })
 	r.initRenewLockScript = syncx.Once(func() { r.renewLockScript = redis.NewScript(renewLockLua) })
 	r.initIncrWithExpireScript = syncx.Once(func() { r.incrWithExpireScript = redis.NewScript(incrWithExpireLua) })

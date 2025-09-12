@@ -1,7 +1,7 @@
 package idx
 
 import (
-	idxv1 "github.com/byteflowing/proto/gen/go/idx/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	"github.com/sqids/sqids-go"
 )
 
@@ -17,7 +17,7 @@ type ShotIDGeneratorOpts struct {
 	Blocklist []string
 }
 
-func NewShortIdGenerator(opts *idxv1.ShortIdConfig) (generator *ShortIDGenerator, err error) {
+func NewShortIdGenerator(opts *configv1.ShortIdConfig) (generator *ShortIDGenerator, err error) {
 	cli, err := sqids.New(sqids.Options{
 		Alphabet:  opts.Alphabet,
 		MinLength: uint8(opts.MinLength),

@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/byteflowing/go-common/rotation"
-	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 )
 
-func getLogWriter(config *dbv1.DbLog) io.Writer {
+func getLogWriter(config *configv1.DbLog) io.Writer {
 	switch config.Out {
 	case enumv1.LogOut_LOG_OUT_STDOUT:
 		return os.Stdout
@@ -25,7 +25,7 @@ func getLogWriter(config *dbv1.DbLog) io.Writer {
 	}
 }
 
-func getLogLevel(config *dbv1.DbLog) logger.LogLevel {
+func getLogLevel(config *configv1.DbLog) logger.LogLevel {
 	switch config.Level {
 	case enumv1.DbLogLevel_DB_LOG_LEVEL_SILENT:
 		return logger.Silent
@@ -39,7 +39,7 @@ func getLogLevel(config *dbv1.DbLog) logger.LogLevel {
 	return logger.Silent
 }
 
-func getLogConfig(config *dbv1.DbLog) logger.Config {
+func getLogConfig(config *configv1.DbLog) logger.Config {
 	return logger.Config{
 		SlowThreshold:             time.Duration(config.SlowThreshold) * time.Millisecond,
 		Colorful:                  config.Colorful,
@@ -49,23 +49,23 @@ func getLogConfig(config *dbv1.DbLog) logger.Config {
 	}
 }
 
-func getMaxIdleTime(config *dbv1.DbConn) time.Duration {
+func getMaxIdleTime(config *configv1.DbConn) time.Duration {
 	return time.Duration(config.MaxIdleTime) * time.Second
 }
 
-func getMaxIdleConnes(config *dbv1.DbConn) int {
+func getMaxIdleConnes(config *configv1.DbConn) int {
 	return int(config.MaxIdleConnes)
 }
 
-func getMaxOpenConnes(config *dbv1.DbConn) int {
+func getMaxOpenConnes(config *configv1.DbConn) int {
 	return int(config.MaxOpenConnes)
 }
 
-func getConnMaxLifetime(config *dbv1.DbConn) time.Duration {
+func getConnMaxLifetime(config *configv1.DbConn) time.Duration {
 	return time.Duration(config.ConnMaxLifeTime) * time.Second
 }
 
-func getMySqlDSN(config *dbv1.DbMysql) string {
+func getMySqlDSN(config *configv1.DbMysql) string {
 	escapedLoc := url.QueryEscape(config.Location)
 	const format = "%s:%s@tcp(%s:%d)/%s?parseTime=True&charset=%s&loc=%s&timeout=%v&readTimeout=%v&writeTimeout=%v"
 	return fmt.Sprintf(
@@ -83,14 +83,14 @@ func getMySqlDSN(config *dbv1.DbMysql) string {
 	)
 }
 
-func getPostgresSSLMode(config *dbv1.DbPostgres) string {
+func getPostgresSSLMode(config *configv1.DbPostgres) string {
 	if config.SslMode {
 		return "enable"
 	}
 	return "disable"
 }
 
-func getPostgresDSN(config *dbv1.DbPostgres) string {
+func getPostgresDSN(config *configv1.DbPostgres) string {
 	const format = "host=%s, user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s search_path=%s"
 	return fmt.Sprintf(
 		format,
@@ -105,7 +105,7 @@ func getPostgresDSN(config *dbv1.DbPostgres) string {
 	)
 }
 
-func getSQLServerDSN(config *dbv1.DbSQLServer) string {
+func getSQLServerDSN(config *configv1.DbSQLServer) string {
 	const format = "sqlserver://%s:%s@%s:%d?database=%s"
 	return fmt.Sprintf(
 		format,
@@ -117,6 +117,6 @@ func getSQLServerDSN(config *dbv1.DbSQLServer) string {
 	)
 }
 
-func getSqliteDSN(config *dbv1.DbSQLite) string {
+func getSqliteDSN(config *configv1.DbSQLite) string {
 	return config.DbPath
 }

@@ -1,7 +1,7 @@
 package rotation
 
 import (
-	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -14,7 +14,7 @@ type Config struct {
 	LocalTime  bool   `json:"localTime"`  // 是否使用本地时间
 }
 
-func NewRotation(opts *logv1.RotationConfig) *lumberjack.Logger {
+func NewRotation(opts *configv1.RotationConfig) *lumberjack.Logger {
 	if opts == nil {
 		panic("Config must not be nil")
 	}

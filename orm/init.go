@@ -10,10 +10,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	dbv1 "github.com/byteflowing/proto/gen/go/db/v1"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 )
 
-func initMySQL(c *dbv1.DbConfig) *gorm.DB {
+func initMySQL(c *configv1.DbConfig) *gorm.DB {
 	db, err := gorm.Open(mysql.Open(getMySqlDSN(c.Mysql)), getGormConfig(c))
 	if err != nil {
 		panic(err)
@@ -21,7 +21,7 @@ func initMySQL(c *dbv1.DbConfig) *gorm.DB {
 	return db
 }
 
-func initPostgres(c *dbv1.DbConfig) *gorm.DB {
+func initPostgres(c *configv1.DbConfig) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(getPostgresDSN(c.Postgres)), getGormConfig(c))
 	if err != nil {
 		panic(err)
@@ -29,7 +29,7 @@ func initPostgres(c *dbv1.DbConfig) *gorm.DB {
 	return db
 }
 
-func initSQLServer(c *dbv1.DbConfig) *gorm.DB {
+func initSQLServer(c *configv1.DbConfig) *gorm.DB {
 	db, err := gorm.Open(sqlserver.Open(getSQLServerDSN(c.Sqlserver)), getGormConfig(c))
 	if err != nil {
 		panic(err)
@@ -37,7 +37,7 @@ func initSQLServer(c *dbv1.DbConfig) *gorm.DB {
 	return db
 }
 
-func initSQLite(c *dbv1.DbConfig) *gorm.DB {
+func initSQLite(c *configv1.DbConfig) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(getSqliteDSN(c.Sqlite)), getGormConfig(c))
 	if err != nil {
 		panic(err)
@@ -45,7 +45,7 @@ func initSQLite(c *dbv1.DbConfig) *gorm.DB {
 	return db
 }
 
-func getGormConfig(c *dbv1.DbConfig) *gorm.Config {
+func getGormConfig(c *configv1.DbConfig) *gorm.Config {
 	config := &gorm.Config{
 		SkipDefaultTransaction: true,
 		PrepareStmt:            true,

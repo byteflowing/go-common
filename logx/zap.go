@@ -8,15 +8,15 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/byteflowing/go-common/rotation"
+	configv1 "github.com/byteflowing/proto/gen/go/config/v1"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
-	logv1 "github.com/byteflowing/proto/gen/go/log/v1"
 )
 
 const (
 	defaultNameKey = "SRV"
 )
 
-func newZap(config *logv1.LogConfig) *zap.Logger {
+func newZap(config *configv1.ZapLogConfig) *zap.Logger {
 	var logger *zap.Logger
 	opts := getOptions(config)
 	if len(config.Outputs) == 0 {
@@ -37,7 +37,7 @@ func newZap(config *logv1.LogConfig) *zap.Logger {
 	return logger
 }
 
-func getOptions(config *logv1.LogConfig) []zap.Option {
+func getOptions(config *configv1.ZapLogConfig) []zap.Option {
 	var opts []zap.Option
 	opts = append(opts, zap.WithCaller(config.ReportCaller))
 	opts = append(opts, zap.AddCallerSkip(int(config.CallerSkip)))
@@ -72,7 +72,7 @@ func getLogLevels(lvls []enumv1.LogLevel) []zapcore.Level {
 	return levels
 }
 
-func getConfig(config *logv1.LogConfig) zap.Config {
+func getConfig(config *configv1.ZapLogConfig) zap.Config {
 	var cfg zap.Config
 	if config.Mode == enumv1.LogMode_LOG_MODE_DEV {
 		cfg = zap.NewDevelopmentConfig()
@@ -91,7 +91,7 @@ func getConfig(config *logv1.LogConfig) zap.Config {
 	return cfg
 }
 
-func getEncoderConfig(config *logv1.LogConfig) zapcore.EncoderConfig {
+func getEncoderConfig(config *configv1.ZapLogConfig) zapcore.EncoderConfig {
 	var cfg zapcore.EncoderConfig
 	if config.Mode == enumv1.LogMode_LOG_MODE_DEV {
 		cfg = zap.NewDevelopmentEncoderConfig()
@@ -117,7 +117,7 @@ func getEncoderConfig(config *logv1.LogConfig) zapcore.EncoderConfig {
 	return cfg
 }
 
-func getCores(c *logv1.LogConfig, enc zapcore.EncoderConfig) []zapcore.Core {
+func getCores(c *configv1.ZapLogConfig, enc zapcore.EncoderConfig) []zapcore.Core {
 	var cores []zapcore.Core
 	globalLevel := convertLogLevel(c.Level)
 	for _, output := range c.Outputs {
@@ -145,7 +145,7 @@ func levelEnablerFunc(levels []zapcore.Level) func(lvl zapcore.Level) bool {
 	})
 }
 
-func getEncoders(c *logv1.LogConfig, enc zapcore.EncoderConfig) zapcore.Encoder {
+func getEncoders(c *configv1.ZapLogConfig, enc zapcore.EncoderConfig) zapcore.Encoder {
 	switch c.Format {
 	case enumv1.LogFormat_LOG_FORMAT_JSON:
 		return zapcore.NewJSONEncoder(enc)
@@ -156,7 +156,7 @@ func getEncoders(c *logv1.LogConfig, enc zapcore.EncoderConfig) zapcore.Encoder 
 	}
 }
 
-func getOutput(out *logv1.LogOutput) io.Writer {
+func getOutput(out *configv1.ZapLogOutput) io.Writer {
 	switch out.Output {
 	case enumv1.LogOut_LOG_OUT_STDOUT:
 		return os.Stdout
