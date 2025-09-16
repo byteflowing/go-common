@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"log"
 	"sync"
 
+	"github.com/byteflowing/go-common/cron"
 	enumv1 "github.com/byteflowing/proto/gen/go/enums/v1"
 	mailv1 "github.com/byteflowing/proto/gen/go/mail/v1"
 	"github.com/wneessen/go-mail"
@@ -15,6 +17,7 @@ type SMTP struct {
 	cli         *mail.Client
 	isConnected bool
 	mux         sync.RWMutex
+	cron        *cron.Cron
 }
 
 func NewSMTP(opts *mailv1.SMTP) (smtp *SMTP, err error) {
@@ -37,7 +40,17 @@ func NewSMTP(opts *mailv1.SMTP) (smtp *SMTP, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SMTP{cli: cli}, nil
+	smtp = &SMTP{
+		cli:  cli,
+		cron: cron.New(),
+	}
+	_, err = smtp.cron.AddFunc("@every 5m", func() {
+		smtp.checkConnection()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return smtp, nil
 }
 
 // DialAndSend 每次都会建立连接发送邮件关闭连接
@@ -60,10 +73,10 @@ func (s *SMTP) Dial(ctx context.Context) error {
 	if s.isConnected {
 		return nil
 	}
-	if err := s.cli.DialWithContext(ctx); err != nil {
+	if err := s.dial(ctx); err != nil {
 		return err
 	}
-	s.isConnected = true
+	s.cron.Start()
 	return nil
 }
 
@@ -78,6 +91,7 @@ func (s *SMTP) Close(ctx context.Context) error {
 		return err
 	}
 	s.isConnected = false
+	s.cron.Stop()
 	return nil
 }
 
@@ -90,11 +104,14 @@ func (s *SMTP) IsConnected() bool {
 
 // Reset 重置与smtp server的连接状态
 func (s *SMTP) Reset() error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	return s.cli.Reset()
 }
 
-// Send 发送邮件，发送前需先确保已经调用了Dial建立与smtp server的连接
-// 会根据初始化时提供的限流参数进行限流，如果被限流会阻塞，可以通过ctx传入超时控制
+// Send 如果没有连接会尝试建立连接再发送
+// 建立连接时会启动goroutine定期监控连接状态，如果与smtp server的连接中断会先关闭连接
+// 等到再次需要发送的时候再次尝试建立连接
 func (s *SMTP) Send(ctx context.Context, mails ...*mailv1.SendMailReq) error {
 	if len(mails) == 0 {
 		return errors.New("mail list is empty")
@@ -103,7 +120,39 @@ func (s *SMTP) Send(ctx context.Context, mails ...*mailv1.SendMailReq) error {
 	if err != nil {
 		return err
 	}
-	return s.cli.Send(messages...)
+	if err = s.cli.Send(messages...); err != nil {
+		// 如果发送失败，尝试使用播放重新发送一次
+		if err := s.cli.DialAndSendWithContext(ctx, messages...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *SMTP) dial(ctx context.Context) (err error) {
+	_ = s.cli.Close()
+	s.isConnected = false
+	if err := s.cli.DialWithContext(ctx); err != nil {
+		return err
+	}
+	s.isConnected = true
+	return nil
+}
+
+func (s *SMTP) checkConnection() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	if !s.isConnected {
+		return
+	}
+	err := s.cli.Reset()
+	if err == nil {
+		return
+	}
+	log.Printf("failed to reset connection so redial: %v", err)
+	if err = s.dial(context.Background()); err != nil {
+		log.Printf("failed to reconnect after reset: %v", err)
+	}
 }
 
 func (s *SMTP) convert2Messages(mails ...*mailv1.SendMailReq) ([]*mail.Msg, error) {
