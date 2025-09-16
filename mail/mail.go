@@ -109,7 +109,7 @@ func (s *SMTP) Reset() error {
 	return s.cli.Reset()
 }
 
-// Send 如果没有连接会尝试建立连接再发送
+// Send 调用前必须先调用Dial建立连接，关闭时需调用Close关闭连接
 // 建立连接时会启动goroutine定期监控连接状态，如果与smtp server的连接中断会先关闭连接
 // 等到再次需要发送的时候再次尝试建立连接
 func (s *SMTP) Send(ctx context.Context, mails ...*mailv1.SendMailReq) error {
